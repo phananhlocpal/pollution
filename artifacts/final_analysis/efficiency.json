@@ -1,0 +1,32 @@
+{
+  "device": "NVIDIA GeForce RTX 5060 Ti",
+  "results": [
+    {
+      "model": "common_local",
+      "batch_size": 8,
+      "runs": 5,
+      "milliseconds_per_batch": 1.6311872482299805,
+      "milliseconds_per_origin": 0.20389840602874756,
+      "peak_allocated_mb": 142.47607421875,
+      "parameters": 27730
+    },
+    {
+      "model": "common_local+wind+meteo",
+      "batch_size": 8,
+      "runs": 5,
+      "milliseconds_per_batch": 3.2685054779052733,
+      "milliseconds_per_origin": 0.40856318473815917,
+      "peak_allocated_mb": 142.9970703125,
+      "parameters": 27987
+    },
+    {
+      "model": "AirDDE-repro",
+      "batch_size": 8,
+      "runs": 5,
+      "milliseconds_per_batch": 867.1458984375,
+      "milliseconds_per_origin": 108.3932373046875,
+      "peak_allocated_mb": 69.7197265625,
+      "parameters": 360182
+    }
+  ]
+}

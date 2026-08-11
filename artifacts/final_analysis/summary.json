@@ -1,0 +1,58 @@
+{
+  "frozen_model": "common_local+wind+meteo",
+  "test_three_seed_mae_mean": 17.208237330118816,
+  "test_three_seed_mae_std": 0.14400084920235956,
+  "airdde_repro_test_mae_one_seed": 15.350053787231445,
+  "airdde_paper_reference_mae": 16.92,
+  "paired_comparisons_seed43_vs_seed2024": {
+    "selected_vs_base_validation": {
+      "mean_delta_mae_a_minus_b": -0.12232167273759842,
+      "ci95": [
+        -0.13804118223488332,
+        -0.10609256383031607
+      ],
+      "block_length_origins": 24,
+      "bootstrap_repetitions": 2000,
+      "a": "common_local+wind+meteo",
+      "b": "common_local"
+    },
+    "selected_vs_base_test": {
+      "mean_delta_mae_a_minus_b": -0.08671421557664871,
+      "ci95": [
+        -0.10072277709841729,
+        -0.0719185095280409
+      ],
+      "block_length_origins": 24,
+      "bootstrap_repetitions": 2000,
+      "a": "common_local+wind+meteo",
+      "b": "common_local"
+    },
+    "selected_vs_airdde_validation": {
+      "mean_delta_mae_a_minus_b": 2.369311809539795,
+      "ci95": [
+        1.911691775918007,
+        2.802634245157242
+      ],
+      "block_length_origins": 24,
+      "bootstrap_repetitions": 2000,
+      "a": "common_local+wind+meteo",
+      "b": "AirDDE-repro"
+    },
+    "selected_vs_airdde_test": {
+      "mean_delta_mae_a_minus_b": 1.7785037755966187,
+      "ci95": [
+        1.401084065437317,
+        2.1648944437503816
+      ],
+      "block_length_origins": 24,
+      "bootstrap_repetitions": 2000,
+      "a": "common_local+wind+meteo",
+      "b": "AirDDE-repro"
+    }
+  },
+  "interpretation": [
+    "The 257-parameter correction improves all three validation seeds and retains a smaller gain on test.",
+    "AirDDE-repro remains materially more accurate; its local result is one seed and must not be conflated with the paper number.",
+    "Regional correction was rejected and the event head was deferred based on validation evidence before test access."
+  ]
+}

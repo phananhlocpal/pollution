@@ -1,0 +1,25 @@
+{
+  "airdde_commit": "9277a56db4bcc0e5e6a3a78bc9aa2b8df09d9774",
+  "airdde_repository": "https://github.com/w2obin/airdde-aaai.git",
+  "knowair_sha256": "380904128cdaba2ae192864c364b0699f5ac711b7c515c3db7d181adad478b1e",
+  "knowair_shape": [
+    11688,
+    184,
+    18
+  ],
+  "city_order_sha256": "3c8f77ccf6ea8a74d8c5a78d08b27eee063188dc84c80b0a4409a32004fe4b98",
+  "graph_data_sha256": "ae0767f70fe58163c4a600b01a0635b81d566055bd8da528d05c9118b0a9134e",
+  "split_indices": {
+    "train_end": 5844,
+    "validation_end": 8766
+  },
+  "forecast_origin_counts": {
+    "train": 5797,
+    "validation": 2875,
+    "test": 2875
+  },
+  "data_materialization": "existing",
+  "official_config": "third_party/airdde/knowair_config.yaml",
+  "known_release_difference": "Released config uses MAE and patience=3; paper describes Huber and tolerance=10.",
+  "station_csv_note": "The 1498-row station.csv is loaded but not used by the released model; graph_data.npz has 184 aligned nodes."
+}

@@ -23,6 +23,10 @@ FEATURES = (
     "100m_wind_speed_kmh", "100m_wind_direction_sin",
     "100m_wind_direction_cos",
 )
+AUXILIARY_FEATURES = (
+    "2m_dewpoint", "total_precipitation", "boundary_layer_height",
+    "ventilation", "dewpoint_deficit",
+)
 
 
 @dataclass
@@ -35,6 +39,10 @@ class Panel:
     stations: list[str]
     feature_names: tuple[str, ...] = FEATURES
     cadence_hours: int = 3
+    auxiliary: np.ndarray | None = None
+    auxiliary_mean: np.ndarray | None = None
+    auxiliary_std: np.ndarray | None = None
+    auxiliary_feature_names: tuple[str, ...] = AUXILIARY_FEATURES
 
 
 def load_panel(root: str | Path = ".") -> Panel:
@@ -63,10 +71,26 @@ def load_panel(root: str | Path = ".") -> Panel:
     if np.any(std < 1e-8):
         raise ValueError("Degenerate train-fitted feature scale")
     values = ((physical - mean) / std).astype(np.float32)
+    dewpoint = np.asarray(raw[..., RAW_FEATURES.index("2m_dewpoint")], dtype=np.float64)
+    temperature = np.asarray(raw[..., RAW_FEATURES.index("2m_temperature")], dtype=np.float64)
+    pbl = np.asarray(raw[..., RAW_FEATURES.index("boundary_layer_height")], dtype=np.float64)
+    precipitation = np.asarray(raw[..., RAW_FEATURES.index("total_precipitation")], dtype=np.float64)
+    auxiliary_physical = np.stack((
+        dewpoint, precipitation, pbl, np.hypot(u, v) * pbl, temperature - dewpoint,
+    ), axis=-1)
+    auxiliary_train = auxiliary_physical[:train_end].reshape(-1, len(AUXILIARY_FEATURES))
+    auxiliary_mean = auxiliary_train.mean(0, dtype=np.float64)
+    auxiliary_std = auxiliary_train.std(0, dtype=np.float64)
+    if np.any(auxiliary_std < 1e-8):
+        raise ValueError("Degenerate train-fitted auxiliary feature scale")
+    auxiliary = ((auxiliary_physical - auxiliary_mean) / auxiliary_std).astype(np.float32)
     stations = np.loadtxt(
         root / "data/benchmarks/knowair/city.txt", usecols=(1,), dtype=str
     ).tolist()
-    return Panel(values, physical, (train_end, val_end), mean, std, stations)
+    return Panel(
+        values, physical, (train_end, val_end), mean, std, stations,
+        auxiliary=auxiliary, auxiliary_mean=auxiliary_mean, auxiliary_std=auxiliary_std,
+    )
 
 
 class CommonLocalWindowDataset(Dataset):
@@ -96,10 +120,15 @@ class CommonLocalWindowDataset(Dataset):
         start = int(self.starts[index]); future_start = start + self.history
         history = self.panel.values[start:future_start]
         future = self.panel.values[future_start:future_start + self.horizon]
-        return {
+        sample = {
             "x": torch.from_numpy(history),
             "future_weather": torch.from_numpy(future[..., 1:]),
             "y": torch.from_numpy(future[..., 0]),
             "forecast_start": torch.tensor(future_start, dtype=torch.long),
         }
+        if self.panel.auxiliary is not None:
+            sample["future_auxiliary"] = torch.from_numpy(
+                self.panel.auxiliary[future_start:future_start + self.horizon]
+            )
+        return sample
 

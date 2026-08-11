@@ -6,3 +6,7 @@ __pycache__/
 .ipynb_checkpoints/
 data
 *.pt
+artifacts/predictions/**/prediction.npy
+artifacts/predictions/**/truth.npy
+artifacts/predictions/**/persistence.npy
+artifacts/predictions/**/forecast_start.npy

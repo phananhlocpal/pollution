@@ -1,8 +1,10 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 import torch
 
+from common_local.correction import FrozenResidualCorrection
 from common_local.data import CommonLocalWindowDataset, FEATURES, Panel
 from common_local.losses import common_local_loss
 from common_local.metrics import validation_report
@@ -61,9 +63,29 @@ def test_validation_report_has_three_days_and_24_horizons():
 
 def test_all_retained_checkpoints_match_the_canonical_architecture():
     root = Path(__file__).resolve().parents[1]
-    for seed in (42, 43, 44):
+    checkpoints = [
+        root / "artifacts/common_local" / f"seed_{seed}" / "best_model.pt"
+        for seed in (42, 43, 44)
+    ]
+    if not any(path.exists() for path in checkpoints):
+        pytest.skip("checkpoints are generated artifacts and are not present")
+    assert all(path.exists() for path in checkpoints), "retained checkpoint set is incomplete"
+    for seed, checkpoint_path in zip((42, 43, 44), checkpoints):
         checkpoint = torch.load(
-            root / "artifacts/common_local" / f"seed_{seed}" / "best_model.pt",
+            checkpoint_path,
             map_location="cpu", weights_only=False,
         )
         CommonLocalForecaster().load_state_dict(checkpoint["model_state"], strict=True)
+
+
+def test_frozen_correction_starts_as_exact_baseline(tmp_path):
+    city = tmp_path / "city.txt"
+    city.write_text("0 a 100 30\n1 b 101 31\n2 c 102 32\n")
+    model = FrozenResidualCorrection(("spatial",), city, np.zeros(7), np.ones(7), hidden_dim=4)
+    batch = {"x": torch.randn(2, 6, 3, 7), "future_weather": torch.randn(2, 24, 3, 6)}
+    model.base = CommonLocalForecaster(stations=3, hidden_dim=48)
+    model.eval()
+    with torch.no_grad():
+        baseline = model.base(batch)["prediction"]
+        corrected = model(batch)["prediction"]
+    assert torch.allclose(corrected, baseline)

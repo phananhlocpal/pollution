@@ -1,0 +1,31 @@
+{
+  "status": "architecture_frozen_before_test",
+  "date": "2026-08-11",
+  "model": "common_local+wind+meteo",
+  "selection_data": "KnowAir validation only",
+  "components": {
+    "wind": "wind-aligned neighbour innovation at current and 3-hour lag",
+    "meteo": "future boundary-layer height and ventilation",
+    "correction_constraint": "zero mean across 184 nodes",
+    "baseline_training": "frozen",
+    "trainable_correction_parameters": 257,
+    "total_parameters": 27987
+  },
+  "validation_three_seed": {
+    "baseline_mae": 18.654312133789062,
+    "selected_mae": 18.51157569885254,
+    "delta_mae": -0.14273643493652344,
+    "delta_std": 0.02548241220202669,
+    "improved_all_seeds": true
+  },
+  "rejected": {
+    "regional": "negligible seed-43 gain (-0.0076 MAE)",
+    "event_head": "deferred because no primary-objective evidence justified added scope"
+  },
+  "checkpoint_sha256": {
+    "seed_42": "129752e00203cdb9d5b0fdf302798ffb07c5c9581de9ae25c1a1326c1a53f62a",
+    "seed_43": "3d41e031dccd310560730e4463e47f930e0d8d21c66a479f653c9e5f9e313685",
+    "seed_44": "e7a0700aa72f20649d36817045dcd15bc4ec5e8fb27e0c206118e477092c0d86"
+  },
+  "test_accessed_at_freeze": false
+}

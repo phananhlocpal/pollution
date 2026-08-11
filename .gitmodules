@@ -1,0 +1,4 @@
+[submodule "third_party/airdde"]
+	path = third_party/airdde
+	url = https://github.com/w2obin/airdde-aaai.git
+	ignore = untracked

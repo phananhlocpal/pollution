@@ -1,0 +1,9 @@
+# Additional dependencies required by the pinned third_party/airdde baseline.
+# AirDDE uses the removed np.Inf alias, so the official code needs NumPy 1.x.
+numpy>=1.26,<2
+PyYAML>=6,<7
+tensorboard>=2.17,<3
+metpy>=1.6,<2
+chinese-calendar>=1.10,<2
+torchdiffeq>=0.2.5,<1
+torch-geometric>=2.6,<3

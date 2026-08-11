@@ -27,6 +27,20 @@ validation MAE trung bình ba seed `18.6587`.
 
 ## Chạy
 
+### Môi trường RTX 50-series
+
+RTX 5060 Ti là GPU Blackwell (`sm_120`) và cần PyTorch build với CUDA 12.8 trở
+lên. Môi trường tái lập của repo dùng Python 3.11 và PyTorch 2.8.0/cu128:
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip setuptools wheel
+.\.venv\Scripts\python.exe -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cu128
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt -r requirements-airdde.txt
+.\.venv\Scripts\python.exe -m pip install -e .
+.\.venv\Scripts\python.exe scripts\verify_cuda.py
+```
+
 Huấn luyện ba seed:
 
 ```bash
@@ -42,6 +56,35 @@ python -m common_local.train --evaluate-only --batch-size 8 --device auto
 
 Output nằm tại `artifacts/common_local/`. Test set không được truy cập trong
 pipeline này.
+
+Checkpoint là artifact sinh cục bộ và bị loại khỏi Git bằng `*.pt`. Sau khi train,
+export prediction/truth trên validation để chạy evaluator và residual probes:
+
+```powershell
+.\.venv\Scripts\python.exe -m common_local.export_predictions
+.\.venv\Scripts\python.exe -m benchmarking.evaluator artifacts\predictions\common_local_seed42_val
+.\.venv\Scripts\python.exe -m benchmarking.residual_probe artifacts\predictions\common_local_seed42_val
+```
+
+Baseline AirDDE được pin ở commit public thông qua Git submodule; xem
+`AIRDDE_REPRODUCTION.md` để chuẩn bị data, train và import output vào cùng evaluator.
+
+## Kết quả residual-driven cuối cùng
+
+Sau residual probe và ablation chỉ trên validation, cấu hình được freeze là
+`common_local + wind-aligned lag correction + PBL/ventilation`. Baseline được đóng
+băng; correction chỉ có 257 tham số trainable (27.987 tham số tổng cộng).
+
+- Validation MAE ba seed: `18.6543 -> 18.5116`.
+- Test MAE ba seed: `17.3090 -> 17.2082`.
+- AirDDE-repro một seed: validation `16.0741`, test `15.3501`.
+- Paired block-bootstrap correction vs baseline trên test: ΔMAE `-0.0867`, CI95%
+  `[-0.1007, -0.0719]`.
+
+Regional correction bị loại do gain validation không đáng kể; event head được hoãn
+trước khi mở test vì chưa có bằng chứng cho objective MAE. Báo cáo đầy đủ nằm tại
+`artifacts/final_analysis/REPORT.md`; manifest freeze nằm tại
+`frozen/wind_meteo/MANIFEST.json`.
 
 ## Cấu trúc còn lại
 
