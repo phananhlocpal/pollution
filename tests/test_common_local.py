@@ -17,6 +17,7 @@ from common_local.losses import common_local_loss
 from common_local.metrics import validation_report
 from common_local.model import CommonLocalForecaster
 from common_local.dynamics import TransportSourceRecurrentForecaster
+from common_local.edge_time import corrected_mae, edge_time_features, fit_horizon_ridge
 
 
 def _panel():
@@ -285,8 +286,59 @@ def test_explicit_origin_dataset_and_adaptive_delay_remain_history_only(tmp_path
     with torch.no_grad():
         first = model(batch)
         second = model({**batch, "future_weather": batch["future_weather"] + 1000})
+        diagnostic = model({**batch, "diagnostic_delay_attention": True})
     assert torch.allclose(first["prediction"], second["prediction"])
     assert model.use_lagged_transport is False
+    assert diagnostic["delay_attention"].shape == (2, 4, 3, 24)
+    assert torch.allclose(
+        diagnostic["delay_attention"].sum(-1), torch.ones(2, 4, 3), atol=1e-6
+    )
+
+
+def test_edge_time_features_are_transport_only_and_ridge_recovers_signal():
+    rng = np.random.default_rng(9)
+    history = rng.normal(size=(5, 24, 4, 7)).astype(np.float32)
+    prediction = rng.normal(size=(5, 3, 4)).astype(np.float32)
+    coordinates = np.array(((100, 30), (101, 30), (100, 31), (101, 31)))
+    features = edge_time_features(
+        history, prediction, coordinates, np.zeros(7), np.ones(7),
+        lags=(1, 2, 3, 4),
+    )
+    assert features.shape == (5, 3, 4, 4)
+    np.testing.assert_allclose(features.mean(2), 0, atol=1e-6)
+    coefficients = np.array((0.2, -0.1, 0.3, 0.05), dtype=np.float32)
+    truth = prediction + np.einsum("bhnf,f->bhn", features, coefficients)
+    valid = np.ones_like(truth, dtype=bool)
+    fitted = fit_horizon_ridge(features, truth - prediction, valid, alpha=1e-8)
+    baseline, corrected = corrected_mae(
+        prediction, truth, features, fitted, target_mean=10, target_std=2
+    )
+    assert corrected < baseline * 1e-3
+
+
+def test_global_source_memory_is_causal_and_attention_is_normalized(tmp_path):
+    city = tmp_path / "city.txt"
+    city.write_text("0 a 100 30\n1 b 101 31\n2 c 102 32\n")
+    model = TransportSourceRecurrentForecaster(
+        city, stations=3, horizon=4, hidden_dim=8, station_dim=3,
+        month_dim=2, operator_dim=4, future_weather_mode="factorized",
+        source_forcing_dim=8, global_source_memory_units=8,
+        use_auxiliary=False, use_month=False,
+    ).eval()
+    batch = {
+        "x": torch.randn(2, 24, 3, 7),
+        "future_weather": torch.randn(2, 4, 3, 6),
+        "future_auxiliary": torch.randn(2, 4, 3, 5),
+        "future_month": torch.randint(0, 12, (2, 4)),
+        "diagnostic_source_memory_attention": True,
+    }
+    with torch.no_grad():
+        first = model(batch)
+        second = model({**batch, "future_weather": batch["future_weather"] + 1000})
+    assert torch.allclose(first["prediction"], second["prediction"])
+    attention = first["source_memory_attention"]
+    assert attention.shape == (2, 4, 8)
+    assert torch.allclose(attention.sum(-1), torch.ones(2, 4), atol=1e-6)
 
 
 def test_external_panel_contract_and_operator_port(tmp_path):

@@ -185,7 +185,7 @@ def main():
         "protocol": {
             "memory_bank": "KnowAir train split only",
             "selection": "three expanding rolling-origin folds inside train",
-            "original_validation_uses": 1,
+            "original_validation_uses_within_analog_family": 1,
             "checkpoint": args.checkpoint,
             "realized_future_weather_at_inference": False,
             "test_accessed": False,

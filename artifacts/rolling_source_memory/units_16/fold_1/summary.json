@@ -1,0 +1,11 @@
+{
+  "model": "global_source_memory_transport_source_v4",
+  "seeds": [
+    43
+  ],
+  "validation_mae": [
+    29.44231605529785
+  ],
+  "validation_mean_mae": 29.44231605529785,
+  "test_accessed": false
+}

@@ -93,6 +93,7 @@ def run_seed(args, seed):
         "horizon_embedding_dim": args.horizon_embedding_dim,
         "use_adaptive_delay": args.adaptive_delay,
         "delay_dim": args.delay_dim,
+        "global_source_memory_units": args.global_source_memory_units,
         "seasonal_period": args.seasonal_period,
         "horizon": horizon,
     }
@@ -139,6 +140,8 @@ def run_seed(args, seed):
     }.get(args.future_weather_mode, "transport_source_recurrent")
     if args.adaptive_delay:
         architecture = "adaptive_delayed_transport_source_v4"
+    if args.global_source_memory_units:
+        architecture = "global_source_memory_transport_source_v4"
     for epoch in range(1, args.epochs + 1):
         train = _run_epoch(model, train_loader, panel, device, optimizer)
         validation = _run_epoch(model, val_loader, panel, device)
@@ -227,6 +230,7 @@ def main():
     parser.add_argument("--horizon-embedding-dim", type=int, default=8)
     parser.add_argument("--adaptive-delay", action="store_true")
     parser.add_argument("--delay-dim", type=int, default=16)
+    parser.add_argument("--global-source-memory-units", type=int, default=0)
     parser.add_argument("--seasonal-period", type=int, default=8)
     parser.add_argument("--seasonal-cycles", type=int, default=3)
     parser.add_argument("--device", default="auto")

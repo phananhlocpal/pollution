@@ -2,7 +2,7 @@
   "protocol": {
     "memory_bank": "KnowAir train split only",
     "selection": "three expanding rolling-origin folds inside train",
-    "original_validation_uses": 1,
+    "original_validation_uses_within_analog_family": 1,
     "checkpoint": "artifacts/retrained_ablation_no_lag/seed_43/best_model.pt",
     "realized_future_weather_at_inference": false,
     "test_accessed": false

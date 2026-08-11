@@ -205,6 +205,22 @@ Completed rolling means were 22.9278 for V3 and 23.0881 for adaptive delay, a
 was not revisited and no test was opened. Existing fold summaries are reused when
 the wrapper is rerun after interruption.
 
+Diagnose the rejected same-station attention and run the train-only joint
+edge-by-time residual probe:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\diagnose_adaptive_delay.py
+.\.venv\Scripts\python.exe scripts\probe_edge_time_delay.py
+```
+
+The best edge-time ridge gain was only +0.0085 MAE and was negative on fold 2, so
+the physics-conditioned edge-time V4 gate failed. The final scoped memory probe
+tests 8/16/32 learnable global prototypes attached only to common source/sink:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\run_global_source_memory_probe.py
+```
+
 The independently retrained validation ablation matrix (three seeds per variant)
 is launched by:
 

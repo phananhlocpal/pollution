@@ -52,6 +52,7 @@ class TransportSourceRecurrentForecaster(nn.Module):
         horizon_embedding_dim: int = 8,
         use_adaptive_delay: bool = False,
         delay_dim: int = 16,
+        global_source_memory_units: int = 0,
         coordinates=None,
     ):
         super().__init__()
@@ -72,8 +73,11 @@ class TransportSourceRecurrentForecaster(nn.Module):
         self.latent_forcing = future_weather_mode == "latent"
         self.factorized_forcing = future_weather_mode == "factorized"
         self.use_adaptive_delay = use_adaptive_delay
+        self.global_source_memory_units = global_source_memory_units
         if use_adaptive_delay and not self.factorized_forcing:
             raise ValueError("Adaptive delayed-state retrieval currently requires V3 forcing")
+        if global_source_memory_units and not self.factorized_forcing:
+            raise ValueError("Global source memory currently requires V3 forcing")
         # History-only V2/V3 deliberately remove the explicit lag pathway.
         if self.latent_forcing or self.factorized_forcing:
             self.use_lagged_transport = False
@@ -142,6 +146,14 @@ class TransportSourceRecurrentForecaster(nn.Module):
         if self.use_adaptive_delay:
             self.delay_key = nn.Linear(1 + weather_dim, delay_dim)
             self.delay_query = nn.Linear(hidden_dim + horizon_embedding_dim, delay_dim)
+        if global_source_memory_units:
+            self.global_source_memory = nn.Parameter(torch.randn(
+                global_source_memory_units, source_forcing_dim
+            ) / np.sqrt(source_forcing_dim))
+            self.global_source_memory_query = nn.Linear(
+                hidden_dim + source_forcing_dim + horizon_embedding_dim,
+                source_forcing_dim,
+            )
         self.station_embedding = nn.Embedding(stations, station_dim)
         self.month_embedding = nn.Embedding(12, month_dim)
 
@@ -162,8 +174,11 @@ class TransportSourceRecurrentForecaster(nn.Module):
             nn.Linear(hidden_dim + operator_terms + 1, operator_dim), nn.GELU(),
             nn.Linear(operator_dim, 1),
         ))
+        common_source_dim = hidden_dim + common_future_dim + (
+            source_forcing_dim if global_source_memory_units else 0
+        )
         self.common_source_head = _zero_last(nn.Sequential(
-            nn.Linear(hidden_dim + common_future_dim, operator_dim), nn.GELU(),
+            nn.Linear(common_source_dim, operator_dim), nn.GELU(),
             nn.Linear(operator_dim, 1),
         ))
         self.local_source_head = _zero_last(nn.Sequential(
@@ -322,6 +337,14 @@ class TransportSourceRecurrentForecaster(nn.Module):
 
     def forward(self, batch):
         x = batch["x"]
+        return_delay_attention = bool(batch.get("diagnostic_delay_attention", False))
+        return_source_memory_attention = bool(
+            batch.get("diagnostic_source_memory_attention", False)
+        )
+        if return_delay_attention and self.training:
+            raise RuntimeError("Delay-attention diagnostics are evaluation-only")
+        if return_source_memory_attention and self.training:
+            raise RuntimeError("Source-memory diagnostics are evaluation-only")
         future_weather = batch["future_weather"]
         batch_size, history, stations, _ = x.shape
         if self.use_auxiliary:
@@ -367,6 +390,8 @@ class TransportSourceRecurrentForecaster(nn.Module):
         station = station[None].expand(batch_size, -1, -1)
         state_history = [pm[:, -2, :, 0], pm[:, -1, :, 0]]
         predictions, transports, sources, gates = [], [], [], []
+        delay_attentions = []
+        source_memory_attentions = []
         factorized_weather_predictions = []
         for step in range(self.horizon):
             state = state_history[-1]
@@ -418,6 +443,19 @@ class TransportSourceRecurrentForecaster(nn.Module):
                 auxiliary_step.mean(1), month,
             ), -1)
             common_hidden = self.common_cell(common_features, common_hidden)
+            source_memory_context = None
+            if self.global_source_memory_units:
+                memory_query = self.global_source_memory_query(torch.cat((
+                    common_hidden, common_forcing_step,
+                    horizon_step[None].expand(batch_size, -1),
+                ), -1))
+                memory_attention = torch.softmax(
+                    memory_query @ self.global_source_memory.T
+                    / np.sqrt(memory_query.shape[-1]), -1
+                )
+                source_memory_context = memory_attention @ self.global_source_memory
+                if return_source_memory_attention:
+                    source_memory_attentions.append(memory_attention)
 
             if self.latent_forcing:
                 innovation_now = self._spatial_innovation(state)
@@ -452,6 +490,8 @@ class TransportSourceRecurrentForecaster(nn.Module):
                 delayed_state = torch.einsum(
                     "bnt,btn->bn", attention, delay_values
                 )
+                if return_delay_attention:
+                    delay_attentions.append(attention)
                 adaptive_innovation = self._wind_delayed_innovation(
                     state, delayed_state, weather_step[..., 4], weather_step[..., 5]
                 )
@@ -500,8 +540,11 @@ class TransportSourceRecurrentForecaster(nn.Module):
             transport = self._zero_mean(transport)
             if not self.use_transport:
                 transport = torch.zeros_like(transport)
+            common_source_inputs = [common_hidden, common_features]
+            if source_memory_context is not None:
+                common_source_inputs.append(source_memory_context)
             common_source = self.max_step * torch.tanh(
-                self.common_source_head(torch.cat((common_hidden, common_features), -1)).squeeze(-1)
+                self.common_source_head(torch.cat(common_source_inputs, -1)).squeeze(-1)
             )
             local_source = self.max_step * torch.tanh(
                 self.local_source_head(torch.cat((local_hidden, local_features), -1)).squeeze(-1)
@@ -552,4 +595,10 @@ class TransportSourceRecurrentForecaster(nn.Module):
             )
         if gates:
             result["event_gate"] = torch.stack(gates, 1)
+        if delay_attentions:
+            result["delay_attention"] = torch.stack(delay_attentions, 1)
+        if source_memory_attentions:
+            result["source_memory_attention"] = torch.stack(
+                source_memory_attentions, 1
+            )
         return result

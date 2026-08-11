@@ -232,8 +232,31 @@ V3 versus adaptive delay were 28.9615 vs 29.6398, 14.3430 vs 14.3473, and 25.478
 vs 25.2771. Mean MAE therefore worsened from 22.9278 to 23.0881 (gain -0.1602),
 well below the +0.5 advancement threshold. Adaptive delayed-state retrieval is
 rejected without revisiting original validation. No three-seed run or test access
-occurred. This closes the historical-memory escalation branch under the current
-protocol; `artifacts/rolling_delay/decision.json` is the decision record.
+occurred. This rejects external continuation retrieval and same-station adaptive
+temporal retrieval; it does not test joint neighbor-by-time local memory or
+learnable global memory units. `artifacts/rolling_delay/decision.json` is the
+decision record.
+
+Post-hoc rolling diagnostics show why same-station delay did not become selective:
+normalized attention entropy is approximately 0.98--0.999 and effective lag stays
+near 12.5 of 24 history steps across horizons and PM/wind regimes. The branch acts
+mostly like a diffuse historical average rather than regime-dependent retrieval.
+
+A physics-conditioned edge-by-time residual probe then tested 8 upstream neighbors
+and lags 1/2/3/4. Its soft prior combines distance, source-wind alignment and
+travel-time mismatch; its ridge correction is zero-mean across stations and was
+fitted/evaluated only inside the rolling training folds. The best alpha improved
+mean MAE by just 0.0085 and worsened fold 2 (-0.0214), failing the predeclared
+>=0.3-and-all-folds-positive gate. Consequently no edge-time V4 is built and
+original validation remains untouched by this family. Results are in
+`artifacts/edge_time_probe/decision.json` and adaptive attention summaries in
+`artifacts/rolling_delay/attention_diagnostics.json`.
+
+The remaining scoped memory test is a small learnable global source-regime bank.
+Unlike generic continuation retrieval, 8/16/32 learned prototypes condition only
+the common source/sink head, reflecting the project's strong source/sink ablation.
+Prototype count is selected exclusively on the same three rolling folds and must
+improve every fold with mean gain >=0.3 before any original-validation run.
 
 ## Residuals before and after recurrence
 

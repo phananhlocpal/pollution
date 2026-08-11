@@ -1,0 +1,101 @@
+{
+  "selection": "three rolling-origin folds inside KnowAir train only",
+  "mechanism": "learnable global prototypes condition common source/sink only",
+  "baseline_v3_mean_mae": 22.927818298339844,
+  "fold_results": [
+    {
+      "fold": 1,
+      "units": 0,
+      "validation_mae": 28.961515426635742
+    },
+    {
+      "fold": 1,
+      "units": 8,
+      "validation_mae": 28.89052963256836
+    },
+    {
+      "fold": 1,
+      "units": 16,
+      "validation_mae": 29.44231605529785
+    },
+    {
+      "fold": 1,
+      "units": 32,
+      "validation_mae": 29.09270668029785
+    },
+    {
+      "fold": 2,
+      "units": 0,
+      "validation_mae": 14.343013763427734
+    },
+    {
+      "fold": 2,
+      "units": 8,
+      "validation_mae": 14.270010948181152
+    },
+    {
+      "fold": 2,
+      "units": 16,
+      "validation_mae": 14.297555923461914
+    },
+    {
+      "fold": 2,
+      "units": 32,
+      "validation_mae": 14.275838851928711
+    },
+    {
+      "fold": 3,
+      "units": 0,
+      "validation_mae": 25.478925704956055
+    },
+    {
+      "fold": 3,
+      "units": 8,
+      "validation_mae": 25.538328170776367
+    },
+    {
+      "fold": 3,
+      "units": 16,
+      "validation_mae": 25.502302169799805
+    },
+    {
+      "fold": 3,
+      "units": 32,
+      "validation_mae": 25.505359649658203
+    }
+  ],
+  "aggregate": [
+    {
+      "units": 8,
+      "mean_mae": 22.899622917175293,
+      "mean_gain": 0.02819538116455078,
+      "minimum_fold_gain": -0.0594024658203125,
+      "all_folds_improve": false
+    },
+    {
+      "units": 16,
+      "mean_mae": 23.080724716186523,
+      "mean_gain": -0.1529064178466797,
+      "minimum_fold_gain": -0.4808006286621094,
+      "all_folds_improve": false
+    },
+    {
+      "units": 32,
+      "mean_mae": 22.95796839396159,
+      "mean_gain": -0.030150095621744793,
+      "minimum_fold_gain": -0.13119125366210938,
+      "all_folds_improve": false
+    }
+  ],
+  "selected": {
+    "units": 8,
+    "mean_mae": 22.899622917175293,
+    "mean_gain": 0.02819538116455078,
+    "minimum_fold_gain": -0.0594024658203125,
+    "all_folds_improve": false
+  },
+  "advancement_gate": "mean gain >=0.3 MAE and positive gain in every fold",
+  "advance_to_original_validation": false,
+  "original_validation_accessed": false,
+  "test_accessed": false
+}
