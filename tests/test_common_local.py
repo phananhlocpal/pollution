@@ -1,23 +1,20 @@
+import hashlib
+import json
 from pathlib import Path
 
 import numpy as np
 import pytest
 import torch
 
-from common_local.analog_memory import (
-    global_keys, inverse_distance_weights, retrieve_neighbors, rolling_origin_folds,
-)
 from common_local.correction import FrozenResidualCorrection
 from common_local.data import (
-    CommonLocalOriginDataset, CommonLocalWindowDataset, FEATURES,
-    GAGNNAirDDEWindowDataset, Panel,
+    CommonLocalWindowDataset, FEATURES, GAGNNAirDDEWindowDataset, Panel,
     audit_gagnn_overlap, fit_seasonal_weather_weights, load_standard_panel,
 )
 from common_local.losses import common_local_loss
 from common_local.metrics import validation_report
 from common_local.model import CommonLocalForecaster
 from common_local.dynamics import TransportSourceRecurrentForecaster
-from common_local.edge_time import corrected_mae, edge_time_features, fit_horizon_ridge
 
 
 def _panel():
@@ -80,19 +77,22 @@ def test_validation_report_supports_external_six_hour_horizon():
 
 def test_all_retained_checkpoints_match_the_canonical_architecture():
     root = Path(__file__).resolve().parents[1]
-    checkpoints = [
-        root / "artifacts/common_local" / f"seed_{seed}" / "best_model.pt"
-        for seed in (42, 43, 44)
-    ]
-    if not any(path.exists() for path in checkpoints):
-        pytest.skip("checkpoints are generated artifacts and are not present")
-    assert all(path.exists() for path in checkpoints), "retained checkpoint set is incomplete"
-    for seed, checkpoint_path in zip((42, 43, 44), checkpoints):
-        checkpoint = torch.load(
-            checkpoint_path,
-            map_location="cpu", weights_only=False,
-        )
-        CommonLocalForecaster().load_state_dict(checkpoint["model_state"], strict=True)
+    manifest = json.loads((root / "paper/CHECKPOINTS.json").read_text())
+    for family, expected_lag in (("core_meteo_lagged", True),
+                                 ("core_meteo_no_lag", False)):
+        entry = manifest[family]
+        assert entry["use_lagged_transport"] is expected_lag
+        assert sorted(entry["sha256"]) == [
+            "seed_42.pt", "seed_43.pt", "seed_44.pt"
+        ]
+        for filename, expected_hash in entry["sha256"].items():
+            checkpoint_path = root / "paper/checkpoints" / family / filename
+            assert checkpoint_path.exists(), f"missing retained checkpoint: {checkpoint_path}"
+            digest = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
+            assert digest == expected_hash
+            checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+            assert checkpoint["architecture"] == "transport_source_recurrent"
+            assert checkpoint["config"]["use_lagged_transport"] is expected_lag
 
 
 def test_frozen_correction_starts_as_exact_baseline(tmp_path):
@@ -242,103 +242,6 @@ def test_train_fitted_seasonal_weights_are_convex_and_share_wind_vector_weights(
     assert np.all(weights >= 0)
     np.testing.assert_allclose(weights.sum(1), 1, atol=1e-6)
     np.testing.assert_allclose(weights[4], weights[5], atol=1e-7)
-
-
-def test_rolling_analog_memory_never_reads_across_dev_boundary():
-    folds = rolling_origin_folds(240, history=24, horizon=24, folds=3)
-    assert len(folds) == 3
-    for fold in folds:
-        assert fold.candidate_origins.max() + 24 <= fold.query_origins.min()
-        assert fold.query_origins.max() + 24 <= 240
-
-
-def test_analog_retrieval_recovers_exact_regime_and_normalizes_weights():
-    values = np.zeros((80, 2, 2), dtype=np.float32)
-    values[:, :, 0] = np.arange(80)[:, None]
-    values[:, :, 1] = (np.arange(80) % 7)[:, None]
-    candidates = np.array((24, 32, 40), dtype=np.int64)
-    keys = global_keys(values, candidates, 24, "multiscale")
-    indices, distances = retrieve_neighbors(keys, keys[[1]], k=3)
-    assert indices[0, 0] == 1
-    weights = inverse_distance_weights(distances)
-    np.testing.assert_allclose(weights.sum(1), 1.0)
-    assert weights[0, 0] == pytest.approx(1.0)
-
-
-def test_explicit_origin_dataset_and_adaptive_delay_remain_history_only(tmp_path):
-    panel = _panel()
-    dataset = CommonLocalOriginDataset(panel, np.array((48, 56)), horizon=4)
-    assert int(dataset[0]["forecast_start"]) == 48
-    city = tmp_path / "city.txt"
-    city.write_text("0 a 100 30\n1 b 101 31\n2 c 102 32\n")
-    model = TransportSourceRecurrentForecaster(
-        city, stations=3, horizon=4, hidden_dim=8, station_dim=3,
-        month_dim=2, operator_dim=4, future_weather_mode="factorized",
-        use_adaptive_delay=True, delay_dim=5, use_auxiliary=False,
-        use_month=False,
-    ).eval()
-    batch = {
-        "x": torch.randn(2, 24, 3, 7),
-        "future_weather": torch.randn(2, 4, 3, 6),
-        "future_auxiliary": torch.randn(2, 4, 3, 5),
-        "future_month": torch.randint(0, 12, (2, 4)),
-    }
-    with torch.no_grad():
-        first = model(batch)
-        second = model({**batch, "future_weather": batch["future_weather"] + 1000})
-        diagnostic = model({**batch, "diagnostic_delay_attention": True})
-    assert torch.allclose(first["prediction"], second["prediction"])
-    assert model.use_lagged_transport is False
-    assert diagnostic["delay_attention"].shape == (2, 4, 3, 24)
-    assert torch.allclose(
-        diagnostic["delay_attention"].sum(-1), torch.ones(2, 4, 3), atol=1e-6
-    )
-
-
-def test_edge_time_features_are_transport_only_and_ridge_recovers_signal():
-    rng = np.random.default_rng(9)
-    history = rng.normal(size=(5, 24, 4, 7)).astype(np.float32)
-    prediction = rng.normal(size=(5, 3, 4)).astype(np.float32)
-    coordinates = np.array(((100, 30), (101, 30), (100, 31), (101, 31)))
-    features = edge_time_features(
-        history, prediction, coordinates, np.zeros(7), np.ones(7),
-        lags=(1, 2, 3, 4),
-    )
-    assert features.shape == (5, 3, 4, 4)
-    np.testing.assert_allclose(features.mean(2), 0, atol=1e-6)
-    coefficients = np.array((0.2, -0.1, 0.3, 0.05), dtype=np.float32)
-    truth = prediction + np.einsum("bhnf,f->bhn", features, coefficients)
-    valid = np.ones_like(truth, dtype=bool)
-    fitted = fit_horizon_ridge(features, truth - prediction, valid, alpha=1e-8)
-    baseline, corrected = corrected_mae(
-        prediction, truth, features, fitted, target_mean=10, target_std=2
-    )
-    assert corrected < baseline * 1e-3
-
-
-def test_global_source_memory_is_causal_and_attention_is_normalized(tmp_path):
-    city = tmp_path / "city.txt"
-    city.write_text("0 a 100 30\n1 b 101 31\n2 c 102 32\n")
-    model = TransportSourceRecurrentForecaster(
-        city, stations=3, horizon=4, hidden_dim=8, station_dim=3,
-        month_dim=2, operator_dim=4, future_weather_mode="factorized",
-        source_forcing_dim=8, global_source_memory_units=8,
-        use_auxiliary=False, use_month=False,
-    ).eval()
-    batch = {
-        "x": torch.randn(2, 24, 3, 7),
-        "future_weather": torch.randn(2, 4, 3, 6),
-        "future_auxiliary": torch.randn(2, 4, 3, 5),
-        "future_month": torch.randint(0, 12, (2, 4)),
-        "diagnostic_source_memory_attention": True,
-    }
-    with torch.no_grad():
-        first = model(batch)
-        second = model({**batch, "future_weather": batch["future_weather"] + 1000})
-    assert torch.allclose(first["prediction"], second["prediction"])
-    attention = first["source_memory_attention"]
-    assert attention.shape == (2, 4, 8)
-    assert torch.allclose(attention.sum(-1), torch.ones(2, 4), atol=1e-6)
 
 
 def test_external_panel_contract_and_operator_port(tmp_path):

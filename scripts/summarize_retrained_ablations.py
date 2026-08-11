@@ -10,7 +10,7 @@ import numpy as np
 
 
 VARIANTS = {
-    "full_recurrent": "artifacts/transport_source_recurrent_strict",
+    "full_recurrent": "artifacts/retrained_ablation_full",
     "no_transport": "artifacts/retrained_ablation_no_transport",
     "no_source_sink": "artifacts/retrained_ablation_no_source",
     "no_lagged_transport": "artifacts/retrained_ablation_no_lag",

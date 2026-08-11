@@ -20,6 +20,8 @@ def run(*args):
 
 
 def main():
+    run("-m", "common_local.train_dynamics", *COMMON,
+        "--output-dir", "artifacts/retrained_ablation_full")
     run("-m", "common_local.train_dynamics", *COMMON, "--disable-transport",
         "--output-dir", "artifacts/retrained_ablation_no_transport")
     run("-m", "common_local.train_dynamics", *COMMON, "--disable-source",

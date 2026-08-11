@@ -1,0 +1,20 @@
+{
+  "core_meteo_lagged": {
+    "role": "source of the existing frozen KnowAir test headline",
+    "use_lagged_transport": true,
+    "sha256": {
+      "seed_42.pt": "2f595098ae2a9addb69a94798c816dd9d0e13009e3386cab8808d6176bf0ac23",
+      "seed_43.pt": "f85a2d8d38f232d03e1e5c2cba17fb37f46d5a462e11a1c659a9b1a0f49e34f5",
+      "seed_44.pt": "21c402c6ee362928cceb69d4bc69ed1c6da72be2941fe7487712fb1bb3efdfe2"
+    }
+  },
+  "core_meteo_no_lag": {
+    "role": "final method specification; validation only",
+    "use_lagged_transport": false,
+    "sha256": {
+      "seed_42.pt": "e01e4ffe92448c51a4a72a7a47d8d9ce4edb4cbc8c3dbfb79a31747d6628643f",
+      "seed_43.pt": "1c3032b875bb54c28514de51a0743e94ed5bec9ec99d661414b8badc6e35f2b1",
+      "seed_44.pt": "da924b4be005b05f363b7291e5805165da15fd4fad912a2fff30924f2c30f3cc"
+    }
+  }
+}
