@@ -1,0 +1,30 @@
+{
+  "experiment": "history_only_core_meteorology",
+  "selection_split": "validation",
+  "seed": 43,
+  "future_realized_weather_read": false,
+  "variants": {
+    "last_observation_persistence": {
+      "parameter_count": 72659,
+      "best_epoch": 17,
+      "mae": {
+        "day1_1_24h": 16.87889289855957,
+        "day2_25_48h": 22.12190055847168,
+        "day3_49_72h": 23.382715225219727,
+        "overall_1_72h": 20.79450798034668
+      }
+    },
+    "learned_causal_gru": {
+      "parameter_count": 75065,
+      "best_epoch": 25,
+      "mae": {
+        "day1_1_24h": 16.756494522094727,
+        "day2_25_48h": 21.967838287353516,
+        "day3_49_72h": 23.396785736083984,
+        "overall_1_72h": 20.707054138183594
+      }
+    }
+  },
+  "decision": "Both history-only variants are rejected on validation; neither is eligible for KnowAir test evaluation.",
+  "test_accessed": false
+}

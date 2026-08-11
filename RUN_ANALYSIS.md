@@ -97,16 +97,16 @@ Sequential Transport--Source Recurrent Operator (72,659 parameters):
 .\.venv\Scripts\python.exe -m common_local.train_dynamics --seeds 43 --epochs 30 --patience 6 --batch-size 256 --output-dir artifacts\transport_source_recurrent --device cuda
 ```
 
-Strict-input version (no PBL/ventilation/dewpoint-deficit/month) used for the
-paper-table comparison:
+Core-meteorology future-forcing version (no PBL/ventilation/dewpoint-deficit/month):
 
 ```powershell
 .\.venv\Scripts\python.exe -m common_local.train_dynamics --seeds 42 43 44 --epochs 30 --patience 6 --batch-size 256 --disable-auxiliary --disable-month --output-dir artifacts\transport_source_recurrent_strict --device cuda
 ```
 
 Its validation-frozen convex ensemble reaches test MAE 15.8086 versus the AirDDE
-paper reference 16.92. Exact hashes, weights, and test results are recorded under
-`frozen/transport_source_recurrent_strict`.
+paper reference 16.92. This still consumes realized future core meteorology and is
+therefore not labelled exact input parity. Exact hashes, weights, and test results
+are recorded under `frozen/transport_source_recurrent_strict`.
 
 The optional regime/event expert is a warm-started ablation. It remains selected
 by global validation MAE, not classification accuracy:
@@ -135,3 +135,31 @@ foreach ($seed in 42,43,44) {
 
 An explicitly approximate paper-style run (Huber/SmoothL1 and patience 10) is
 available with `--paper-style`; it is not labelled an exact paper reproduction.
+
+## 6. Fairness and mechanism follow-up
+
+History-only core-meteorology runs never read the realized future-weather tensor:
+
+```powershell
+.\.venv\Scripts\python.exe -m common_local.train_dynamics --seeds 43 --epochs 30 --patience 6 --batch-size 256 --disable-auxiliary --disable-month --future-weather-mode persistence --output-dir artifacts\transport_source_recurrent_history_persistence --device cuda
+.\.venv\Scripts\python.exe -m common_local.train_dynamics --seeds 43 --epochs 30 --patience 6 --batch-size 256 --disable-auxiliary --disable-month --future-weather-mode learned --weather-hidden-dim 16 --weather-loss-weight 0.1 --output-dir artifacts\transport_source_recurrent_history_learned --device cuda
+```
+
+They obtained validation MAE 20.7945 and 20.7071, respectively, and were rejected
+without opening their KnowAir test predictions.
+
+The independently retrained validation ablation matrix (three seeds per variant)
+is launched by:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\run_retrained_ablations.py
+```
+
+This covers no-transport, no-source/sink, no-lagged-transport, and a 72,630-parameter
+direct counterpart against the 72,659-parameter recurrent model. Its summary is
+separate from frozen-checkpoint knockout diagnostics.
+
+The external lockbox adapter accepts a standardized NPZ and variable station,
+weather and horizon dimensions. Exact-data requirements and commands for China-AQI
+and US-PM are in `EXTERNAL_REPLICATION.md`; similar local datasets must not be
+silently substituted for the authors' unavailable tensors.

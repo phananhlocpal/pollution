@@ -1,0 +1,36 @@
+{
+  "source_bundle": "C:\\Users\\ezycloudx-admin\\Desktop\\pollution\\artifacts\\predictions\\transport_source_recurrent_strict_seed44_val",
+  "source_manifest": {
+    "model": "transport_source_recurrent",
+    "architecture": "transport_source_recurrent",
+    "components": [],
+    "seed": 44,
+    "split": "val",
+    "shape": [
+      2875,
+      24,
+      184
+    ],
+    "cadence_hours": 3,
+    "history_steps": 24,
+    "horizon_steps": 24,
+    "dataset_sha256": "380904128cdaba2ae192864c364b0699f5ac711b7c515c3db7d181adad478b1e",
+    "station_order_sha256": "3c8f77ccf6ea8a74d8c5a78d08b27eee063188dc84c80b0a4409a32004fe4b98",
+    "checkpoint_sha256": "21c402c6ee362928cceb69d4bc69ed1c6da72be2941fe7487712fb1bb3efdfe2"
+  },
+  "probe_split": {
+    "train_origins": 1701,
+    "purged_gap_origins": 24,
+    "evaluation_origins": 1150,
+    "inference_warning": "Screening only; final comparison needs paired block inference."
+  },
+  "selected_horizon_hours": [
+    3,
+    6,
+    12,
+    24,
+    36,
+    48,
+    72
+  ]
+}

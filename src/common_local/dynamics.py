@@ -25,7 +25,7 @@ class TransportSourceRecurrentForecaster(nn.Module):
 
     def __init__(
         self,
-        city_path,
+        city_path=None,
         stations: int = 184,
         weather_dim: int = 6,
         auxiliary_dim: int = 3,
@@ -41,6 +41,10 @@ class TransportSourceRecurrentForecaster(nn.Module):
         use_lagged_transport: bool = True,
         use_auxiliary: bool = True,
         use_month: bool = True,
+        future_weather_mode: str = "observed",
+        weather_hidden_dim: int = 16,
+        weather_loss_weight: float = 0.1,
+        coordinates=None,
     ):
         super().__init__()
         self.horizon = horizon
@@ -51,8 +55,18 @@ class TransportSourceRecurrentForecaster(nn.Module):
         self.use_lagged_transport = use_lagged_transport
         self.use_auxiliary = use_auxiliary
         self.use_month = use_month
+        if future_weather_mode not in {"observed", "persistence", "learned"}:
+            raise ValueError(f"Unknown future weather mode: {future_weather_mode}")
+        self.future_weather_mode = future_weather_mode
+        self.weather_loss_weight = weather_loss_weight
         self.common_encoder = nn.GRU(1 + weather_dim + 1, hidden_dim, batch_first=True)
         self.local_encoder = nn.GRU(3 + weather_dim * 3, hidden_dim, batch_first=True)
+        if future_weather_mode == "learned":
+            self.weather_encoder = nn.GRU(weather_dim, weather_hidden_dim, batch_first=True)
+            self.weather_cell = nn.GRUCell(weather_dim, weather_hidden_dim)
+            self.weather_head = nn.Linear(weather_hidden_dim, weather_dim)
+            nn.init.zeros_(self.weather_head.weight)
+            nn.init.zeros_(self.weather_head.bias)
         self.station_embedding = nn.Embedding(stations, station_dim)
         self.month_embedding = nn.Embedding(12, month_dim)
 
@@ -85,7 +99,7 @@ class TransportSourceRecurrentForecaster(nn.Module):
             )
             nn.init.constant_(self.event_gate[-1].bias, -2.0)
 
-        weights, east, north, _ = spatial_buffers(city_path)
+        weights, east, north, _ = spatial_buffers(city_path, coordinates=coordinates)
         indices = []
         edge_weights = []
         edge_east = []
@@ -123,14 +137,37 @@ class TransportSourceRecurrentForecaster(nn.Module):
         weights = torch.where(total > 1e-8, weights / total.clamp_min(1e-8), fallback)
         return (weights * neighbor_state).sum(-1) - state
 
+    def _causal_future_weather(self, weather: torch.Tensor) -> torch.Tensor:
+        if self.future_weather_mode == "observed":
+            raise RuntimeError("Observed future weather is supplied directly")
+        if self.future_weather_mode == "persistence":
+            return weather[:, -1:, :, :].expand(-1, self.horizon, -1, -1)
+        batch_size, history, stations, weather_dim = weather.shape
+        flattened = weather.permute(0, 2, 1, 3).reshape(
+            batch_size * stations, history, weather_dim
+        )
+        _, hidden = self.weather_encoder(flattened)
+        hidden = hidden[-1]
+        previous = flattened[:, -1]
+        predictions = []
+        for _ in range(self.horizon):
+            hidden = self.weather_cell(previous, hidden)
+            # Residual prediction makes persistence the natural initialization.
+            previous = previous + self.weather_head(hidden)
+            predictions.append(previous.reshape(batch_size, stations, weather_dim))
+        return torch.stack(predictions, 1)
+
     def forward(self, batch):
         x = batch["x"]
         future_weather = batch["future_weather"]
-        auxiliary = batch["future_auxiliary"][..., (2, 3, 4)]
-        if not self.use_auxiliary:
-            auxiliary = torch.zeros_like(auxiliary)
         batch_size, history, stations, _ = x.shape
+        if self.use_auxiliary:
+            auxiliary = batch["future_auxiliary"][..., (2, 3, 4)]
+        else:
+            auxiliary = x.new_zeros(batch_size, self.horizon, stations, 3)
         pm, weather = x[..., :1], x[..., 1:]
+        if self.future_weather_mode != "observed":
+            future_weather = self._causal_future_weather(weather)
         common_pm = pm.mean(2)
         residual_pm = pm - common_pm[:, :, None]
         common_input = torch.cat((
@@ -154,9 +191,10 @@ class TransportSourceRecurrentForecaster(nn.Module):
             state = state_history[-1]
             weather_step = future_weather[:, step]
             auxiliary_step = auxiliary[:, step]
-            month = self.month_embedding(batch["future_month"][:, step])
-            if not self.use_month:
-                month = torch.zeros_like(month)
+            if self.use_month:
+                month = self.month_embedding(batch["future_month"][:, step])
+            else:
+                month = x.new_zeros(batch_size, self.month_embedding.embedding_dim)
             month_nodes = month[:, None].expand(-1, stations, -1)
             common_features = torch.cat((
                 state.mean(-1, keepdim=True), weather_step.mean(1),
@@ -240,6 +278,8 @@ class TransportSourceRecurrentForecaster(nn.Module):
             "transport_operator": torch.stack(transports, 1),
             "source_operator": torch.stack(sources, 1),
         }
+        if self.future_weather_mode == "learned":
+            result["weather_prediction"] = future_weather
         if gates:
             result["event_gate"] = torch.stack(gates, 1)
         return result

@@ -5,7 +5,7 @@
     "test_accessed_after_freeze": true,
     "feature_tracks": [
       "extended_information",
-      "strict_raw_information_parity"
+      "core_meteorology_future_forcing"
     ]
   },
   "prediction_ensemble": {
@@ -80,7 +80,7 @@
     "base_seed43_validation_mae": 16.496671676635742,
     "decision": "reject"
   },
-  "strict_feature_track": {
+  "core_meteorology_future_forcing_track": {
     "disabled_inputs": [
       "boundary_layer_height",
       "ventilation",
@@ -105,11 +105,22 @@
       16.044116973876953,
       16.083044052124023
     ],
+    "single_model_test_mean_mae": 16.128512064615887,
+    "single_model_test_std_mae": 0.09315980753392577,
+    "headline_result": "single_model_three_seed",
+    "uniform_mean_ensemble_test": {
+      "mae": 15.812956809997559,
+      "rmse": 24.308374404907227,
+      "smape": 0.37177011370658875,
+      "weights": null,
+      "reporting_role": "secondary"
+    },
     "frozen_convex_ensemble_test_mae": 15.80861759185791,
     "frozen_convex_ensemble_test_rmse": 24.301437377929688,
     "frozen_convex_ensemble_test_smape": 0.37167757749557495,
     "test_improvement_over_paper_mae": 1.1113824081420915,
-    "test_relative_improvement_percent": 6.568453948830328
+    "test_relative_improvement_percent": 6.568453948830328,
+    "convex_reporting_role": "sensitivity_only"
   },
   "recurrent_frozen_knockout": {
     "no_transport_delta_validation_mae": 5.010185241699219,
@@ -118,10 +129,50 @@
     "no_month_delta_validation_mae": 0.18782361348470053,
     "note": "Frozen-checkpoint knockout; not equivalent to retraining the ablated architecture."
   },
+  "retrained_mechanism_ablation": {
+    "selection_split": "validation",
+    "seeds": [42, 43, 44],
+    "mean_mae": {
+      "full_recurrent": 16.76679039001465,
+      "no_transport": 17.279978434244793,
+      "no_source_sink": 20.389183680216473,
+      "no_lagged_transport": 16.7630189259847,
+      "matched_direct": 18.861982345581055
+    },
+    "delta_vs_full": {
+      "no_transport": 0.5131880442301444,
+      "no_source_sink": 3.622393290201824,
+      "no_lagged_transport": -0.003771464029949101,
+      "matched_direct": 2.0951919555664062
+    },
+    "decision": "Retain sequential source/sink and transport claims; reject a distinct lag-pathway benefit claim."
+  },
   "residual_modes": {
     "variance_explained_32_modes": 0.6890719532966614,
     "causal_72h_delta_mae": 1.4380073547363281,
     "decision": "reject"
+  },
+  "china_aqi_external_lockbox": {
+    "dataset": "official GAGNN 209-city release",
+    "protocol": "24 hourly history to 6 hourly forecasts; chronological 7:1:2",
+    "future_weather_mode": "learned_causal_history_only",
+    "frozen_before_test": true,
+    "single_model_three_seed_mean": {
+      "mae": 11.429864565531412,
+      "rmse": 20.94898287455241,
+      "mape": 17.944680154323578
+    },
+    "single_model_three_seed_std": {
+      "mae": 0.011518691170224544,
+      "rmse": 0.020033623111878934,
+      "mape": 0.05189079548707527
+    },
+    "uniform_mean_ensemble": {
+      "mae": 11.302510261535645,
+      "rmse": 20.787057876586914,
+      "mape": 17.729511857032776
+    },
+    "published_airdde": {"mae": 17.03, "rmse": 29.91, "mape": 30.82}
   },
   "efficiency_batch8": {
     "transport_source_recurrent_median_ms_per_origin": 4.024863958358765,

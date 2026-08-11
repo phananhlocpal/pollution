@@ -4,7 +4,7 @@
   "project_level_test_previously_seen_for_extended_track": true,
   "strict_checkpoint_test_predictions_seen_before_freeze": false,
   "architecture": "transport_source_recurrent",
-  "feature_track": "strict_raw_information_parity",
+  "feature_track": "core_meteorology_future_forcing",
   "disabled_inputs": ["boundary_layer_height", "ventilation", "dewpoint_deficit", "month"],
   "parameter_count_per_seed": 72659,
   "seeds": [42, 43, 44],
@@ -18,15 +18,23 @@
     "43": 16.750455856323242,
     "44": 16.755868911743164
   },
-  "ensemble": {
-    "method": "nonnegative_sum_to_one_convex",
-    "weight_selection_split": "validation",
-    "weights_by_seed_42_43_44": [
-      0.3219134746662225,
-      0.36797691249021847,
-      0.31010961284355915
-    ],
-    "validation_mae": 16.459192276000977
+  "reporting_order": ["single_model_three_seed", "uniform_mean_ensemble", "convex_ensemble_sensitivity"],
+  "ensembles": {
+    "uniform_mean": {
+      "method": "arithmetic_mean",
+      "weight_selection_split": null,
+      "weights": null
+    },
+    "convex_sensitivity": {
+      "method": "nonnegative_sum_to_one_convex",
+      "weight_selection_split": "validation",
+      "weights_by_seed_42_43_44": [
+        0.3219134746662225,
+        0.36797691249021847,
+        0.31010961284355915
+      ],
+      "validation_mae": 16.459192276000977
+    }
   },
   "primary_test_target_mae": 16.92
 }

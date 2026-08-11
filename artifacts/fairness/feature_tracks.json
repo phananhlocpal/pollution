@@ -1,5 +1,5 @@
 {
-  "strict_parity": {
+  "core_meteorology_future_forcing": {
     "description": "PM2.5 plus the same raw KnowAir meteorological information budget used by the release baseline; wind direction uses a circular sin/cos representation instead of one angular channel.",
     "common_local_features": [
       "PM2.5",
@@ -11,7 +11,7 @@
     "models": [
       "common_local",
       "common_local+wind",
-      "transport_source_recurrent_strict"
+      "transport_source_recurrent_core_meteo"
     ]
   },
   "extended_information": {

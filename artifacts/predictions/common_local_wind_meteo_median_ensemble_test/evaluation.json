@@ -1,17 +1,13 @@
 {
   "manifest": {
-    "model": "common_local+wind+meteo:median_ensemble",
+    "model": "common_local_wind_meteo:median_ensemble",
     "split": "test",
     "seeds": [
       42,
       43,
       44
     ],
-    "weights": [
-      0.31419524408543476,
-      0.37086106106119265,
-      0.3149436948533726
-    ],
+    "weights": null,
     "shape": [
       2875,
       24,

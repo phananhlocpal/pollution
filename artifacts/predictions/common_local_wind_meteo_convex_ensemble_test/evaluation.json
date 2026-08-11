@@ -1,6 +1,6 @@
 {
   "manifest": {
-    "model": "common_local+wind+meteo:convex_ensemble",
+    "model": "common_local_wind_meteo:convex_ensemble",
     "split": "test",
     "seeds": [
       42,

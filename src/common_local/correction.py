@@ -14,9 +14,17 @@ from .model import CommonLocalForecaster
 COMPONENT_DIMS = {"spatial": 2, "wind": 2, "meteo": 2, "regional": 1}
 
 
-def spatial_buffers(city_path, regions=8):
-    city = np.loadtxt(city_path, dtype=str)
-    coordinates = city[:, 2:4].astype(float)
+def spatial_buffers(city_path=None, regions=8, coordinates=None):
+    """Build deterministic KNN buffers from a city file or ``[N,2]`` lon/lat."""
+    if coordinates is None:
+        if city_path is None:
+            raise ValueError("Either city_path or coordinates must be provided")
+        city = np.loadtxt(city_path, dtype=str)
+        coordinates = city[:, 2:4].astype(float)
+    else:
+        coordinates = np.asarray(coordinates, dtype=float)
+        if coordinates.ndim != 2 or coordinates.shape[1] != 2:
+            raise ValueError(f"Expected coordinates [stations,2], got {coordinates.shape}")
     weights = neighbor_weights(coordinates, neighbors=min(8, len(coordinates) - 1)).astype(np.float32)
     lat = np.deg2rad(coordinates[:, 1]); lon = np.deg2rad(coordinates[:, 0])
     north = lat[:, None] - lat[None, :]

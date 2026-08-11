@@ -5,8 +5,11 @@ __pycache__/
 .pytest_cache/
 .ipynb_checkpoints/
 data
+third_party/gagnn/
 *.pt
 artifacts/predictions/**/prediction.npy
 artifacts/predictions/**/truth.npy
 artifacts/predictions/**/persistence.npy
 artifacts/predictions/**/forecast_start.npy
+artifacts/*_stdout.log
+artifacts/*_stderr.log

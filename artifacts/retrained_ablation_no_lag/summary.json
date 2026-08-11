@@ -1,0 +1,15 @@
+{
+  "model": "transport_source_recurrent",
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "validation_mae": [
+    16.781269073486328,
+    16.734329223632812,
+    16.77345848083496
+  ],
+  "validation_mean_mae": 16.7630189259847,
+  "test_accessed": false
+}

@@ -1,4 +1,10 @@
 {
+  "prefix": "common_local_wind_meteo",
+  "seeds": [
+    42,
+    43,
+    44
+  ],
   "convex_weights": [
     0.31419524408543476,
     0.37086106106119265,

@@ -50,6 +50,11 @@ def _run_epoch(model, loader, panel, device, optimizer=None, loss_kind="l1"):
             loss, _ = common_local_loss(
                 output, batch["y"], float(panel.mean[0]), float(panel.std[0]), loss_kind
             )
+            if "weather_prediction" in output and "future_weather_target" in batch:
+                weather_loss = torch.nn.functional.smooth_l1_loss(
+                    output["weather_prediction"], batch["future_weather_target"], beta=.5
+                )
+                loss = loss + model.weather_loss_weight * weather_loss
             if training:
                 optimizer.zero_grad(set_to_none=True); loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
@@ -63,7 +68,9 @@ def _run_epoch(model, loader, panel, device, optimizer=None, loss_kind="l1"):
     if not training:
         prediction = np.concatenate(predictions) * panel.std[0] + panel.mean[0]
         truth = np.concatenate(truths) * panel.std[0] + panel.mean[0]
-        result["metrics"] = validation_report(prediction, truth)
+        result["metrics"] = validation_report(
+            prediction, truth, cadence_hours=getattr(panel, "cadence_hours", 3)
+        )
     return result
 
 

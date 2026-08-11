@@ -5,7 +5,7 @@ import pytest
 import torch
 
 from common_local.correction import FrozenResidualCorrection
-from common_local.data import CommonLocalWindowDataset, FEATURES, Panel
+from common_local.data import CommonLocalWindowDataset, FEATURES, Panel, load_standard_panel
 from common_local.losses import common_local_loss
 from common_local.metrics import validation_report
 from common_local.model import CommonLocalForecaster
@@ -63,6 +63,13 @@ def test_validation_report_has_three_days_and_24_horizons():
     assert report["overall_1_72h"]["smape_masked"] == report["overall_1_72h"]["smape"]
 
 
+def test_validation_report_supports_external_six_hour_horizon():
+    truth = np.ones((2, 6, 3)) * 10
+    report = validation_report(truth + 2, truth, cadence_hours=1)
+    assert report["overall_1_6h"]["mae"] == 2
+    assert report["horizon_hours"] == [1, 2, 3, 4, 5, 6]
+
+
 def test_all_retained_checkpoints_match_the_canonical_architecture():
     root = Path(__file__).resolve().parents[1]
     checkpoints = [
@@ -113,3 +120,52 @@ def test_recurrent_operator_is_sequential_and_conservative_at_initialization(tmp
     assert torch.allclose(
         output["transport_operator"].mean(-1), torch.zeros(2, 4), atol=1e-6
     )
+
+
+@pytest.mark.parametrize("mode", ["persistence", "learned"])
+def test_history_only_recurrent_does_not_read_future_weather(tmp_path, mode):
+    city = tmp_path / "city.txt"
+    city.write_text("0 a 100 30\n1 b 101 31\n2 c 102 32\n")
+    model = TransportSourceRecurrentForecaster(
+        city, stations=3, horizon=4, hidden_dim=8, station_dim=3,
+        month_dim=2, operator_dim=4, future_weather_mode=mode,
+        weather_hidden_dim=5, use_auxiliary=False, use_month=False,
+    ).eval()
+    batch = {
+        "x": torch.randn(2, 6, 3, 7),
+        "future_weather": torch.randn(2, 4, 3, 6),
+        "future_auxiliary": torch.randn(2, 4, 3, 5),
+        "future_month": torch.randint(0, 12, (2, 4)),
+    }
+    changed = {**batch, "future_weather": batch["future_weather"] + 1000}
+    with torch.no_grad():
+        first = model(batch)
+        second = model(changed)
+    assert torch.allclose(first["prediction"], second["prediction"])
+    if mode == "learned":
+        assert torch.allclose(first["weather_prediction"], second["weather_prediction"])
+
+
+def test_external_panel_contract_and_operator_port(tmp_path):
+    path = tmp_path / "external.npz"
+    rng = np.random.default_rng(4)
+    np.savez(
+        path, target=rng.normal(size=(240, 3)),
+        weather=rng.normal(size=(240, 3, 7)),
+        coordinates=np.array([[100., 30.], [101., 31.], [102., 32.]]),
+        station_ids=np.array(["a", "b", "c"]),
+    )
+    panel = load_standard_panel(path)
+    assert panel.split_points == (168, 192)
+    assert panel.values.shape == (240, 3, 8)
+    model = TransportSourceRecurrentForecaster(
+        stations=3, weather_dim=7, horizon=4, hidden_dim=8, station_dim=3,
+        month_dim=2, operator_dim=4, coordinates=panel.coordinates,
+        use_auxiliary=False, use_month=False,
+    )
+    sample = CommonLocalWindowDataset(panel, "train", max_samples=2)[0]
+    batch = {key: value[None] for key, value in sample.items()}
+    output = model(batch)
+    assert output["prediction"].shape == (1, 4, 3)
+    with pytest.raises(ValueError, match="Expected 209 stations"):
+        load_standard_panel(path, expected_stations=209)

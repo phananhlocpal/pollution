@@ -1,0 +1,240 @@
+{
+  "models": {
+    "before": "common_local",
+    "after": "core-meteorology recurrent"
+  },
+  "split": "validation",
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "test_accessed": false,
+  "horizon_mae": [
+    {
+      "horizon_hours": 3,
+      "before": 10.38104248046875,
+      "after": 10.330089251200357,
+      "reduction": 0.05095322926839252
+    },
+    {
+      "horizon_hours": 6,
+      "before": 13.893336296081543,
+      "after": 13.551977157592773,
+      "reduction": 0.34135913848876953
+    },
+    {
+      "horizon_hours": 12,
+      "before": 16.42086410522461,
+      "after": 15.438617070515951,
+      "reduction": 0.9822470347086583
+    },
+    {
+      "horizon_hours": 24,
+      "before": 18.10790252685547,
+      "after": 16.638147354125977,
+      "reduction": 1.4697551727294922
+    },
+    {
+      "horizon_hours": 36,
+      "before": 19.577287038167317,
+      "after": 17.444285074869793,
+      "reduction": 2.1330019632975237
+    },
+    {
+      "horizon_hours": 48,
+      "before": 19.860997517903645,
+      "after": 17.66312535603841,
+      "reduction": 2.1978721618652344
+    },
+    {
+      "horizon_hours": 72,
+      "before": 20.67682139078776,
+      "after": 18.038859049479168,
+      "reduction": 2.6379623413085938
+    }
+  ],
+  "event_phase_72h": {
+    "before": [
+      {
+        "horizon_hours": 72,
+        "event_phase": "continuation",
+        "points": 8663.0,
+        "mae": 56.130716959635414
+      },
+      {
+        "horizon_hours": 72,
+        "event_phase": "decay",
+        "points": 30543.0,
+        "mae": 27.931275685628254
+      },
+      {
+        "horizon_hours": 72,
+        "event_phase": "normal",
+        "points": 459571.0,
+        "mae": 16.204094568888348
+      },
+      {
+        "horizon_hours": 72,
+        "event_phase": "onset",
+        "points": 30223.0,
+        "mae": 71.53010813395183
+      }
+    ],
+    "after": [
+      {
+        "horizon_hours": 72,
+        "event_phase": "continuation",
+        "points": 8663.0,
+        "mae": 50.84585316975912
+      },
+      {
+        "horizon_hours": 72,
+        "event_phase": "decay",
+        "points": 30543.0,
+        "mae": 20.93218994140625
+      },
+      {
+        "horizon_hours": 72,
+        "event_phase": "normal",
+        "points": 459571.0,
+        "mae": 14.763725280761719
+      },
+      {
+        "horizon_hours": 72,
+        "event_phase": "onset",
+        "points": 30223.0,
+        "mae": 55.8164316813151
+      }
+    ]
+  },
+  "season_72h": {
+    "before": [
+      {
+        "horizon_hours": 72,
+        "season": "DJF",
+        "points": 124200.0,
+        "mae": 34.13141759236654
+      },
+      {
+        "horizon_hours": 72,
+        "season": "JJA",
+        "points": 135424.0,
+        "mae": 12.236786842346191
+      },
+      {
+        "horizon_hours": 72,
+        "season": "MAM",
+        "points": 135424.0,
+        "mae": 18.823858896891277
+      },
+      {
+        "horizon_hours": 72,
+        "season": "SON",
+        "points": 133952.0,
+        "mae": 18.683350880940754
+      }
+    ],
+    "after": [
+      {
+        "horizon_hours": 72,
+        "season": "DJF",
+        "points": 124200.0,
+        "mae": 26.84021504720052
+      },
+      {
+        "horizon_hours": 72,
+        "season": "JJA",
+        "points": 135424.0,
+        "mae": 11.972001711527506
+      },
+      {
+        "horizon_hours": 72,
+        "season": "MAM",
+        "points": 135424.0,
+        "mae": 18.212107976277668
+      },
+      {
+        "horizon_hours": 72,
+        "season": "SON",
+        "points": 133952.0,
+        "mae": 15.905118306477865
+      }
+    ]
+  },
+  "residual_probe_incremental_gain": [
+    {
+      "horizon_hours": 3,
+      "signal": "wind_aligned_innovation",
+      "before_incremental_delta_mae": -0.12571430206298825,
+      "after_incremental_delta_mae": 0.02241166432698563
+    },
+    {
+      "horizon_hours": 3,
+      "signal": "wind_lagged_innovation_3h",
+      "before_incremental_delta_mae": -0.1056270599365234,
+      "after_incremental_delta_mae": -0.03535842895507806
+    },
+    {
+      "horizon_hours": 3,
+      "signal": "boundary_layer_height",
+      "before_incremental_delta_mae": -0.01614602406819657,
+      "after_incremental_delta_mae": -0.016312599182128868
+    },
+    {
+      "horizon_hours": 3,
+      "signal": "ventilation",
+      "before_incremental_delta_mae": -0.0109930038452148,
+      "after_incremental_delta_mae": -0.016341527303059832
+    },
+    {
+      "horizon_hours": 24,
+      "signal": "wind_aligned_innovation",
+      "before_incremental_delta_mae": -0.058289845784505134,
+      "after_incremental_delta_mae": -0.005355834960937433
+    },
+    {
+      "horizon_hours": 24,
+      "signal": "wind_lagged_innovation_3h",
+      "before_incremental_delta_mae": -0.025492350260416633,
+      "after_incremental_delta_mae": -0.004337628682454401
+    },
+    {
+      "horizon_hours": 24,
+      "signal": "boundary_layer_height",
+      "before_incremental_delta_mae": -0.0208168029785156,
+      "after_incremental_delta_mae": 0.0023756027221679336
+    },
+    {
+      "horizon_hours": 24,
+      "signal": "ventilation",
+      "before_incremental_delta_mae": -0.012907028198242167,
+      "after_incremental_delta_mae": -0.0049009323120117005
+    },
+    {
+      "horizon_hours": 72,
+      "signal": "wind_aligned_innovation",
+      "before_incremental_delta_mae": -0.0012868245442708333,
+      "after_incremental_delta_mae": -0.0013701121012369456
+    },
+    {
+      "horizon_hours": 72,
+      "signal": "wind_lagged_innovation_3h",
+      "before_incremental_delta_mae": -0.00025685628255203333,
+      "after_incremental_delta_mae": -0.0004571278889973999
+    },
+    {
+      "horizon_hours": 72,
+      "signal": "boundary_layer_height",
+      "before_incremental_delta_mae": -0.0309975941975911,
+      "after_incremental_delta_mae": -0.024629592895507767
+    },
+    {
+      "horizon_hours": 72,
+      "signal": "ventilation",
+      "before_incremental_delta_mae": -0.021301905314127567,
+      "after_incremental_delta_mae": -0.014684041341145801
+    }
+  ],
+  "interpretation_rule": "Negative incremental delta means the residual signal remains correctable on the purged probe split."
+}

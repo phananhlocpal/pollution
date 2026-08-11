@@ -86,7 +86,8 @@ def build(split, method, weights=None, chunk=64,
         hardlink(first / filename, output / filename)
     manifest = {
         "model": f"{prefix}:{method}_ensemble", "split": split,
-        "seeds": list(seeds), "weights": None if weights is None else weights.tolist(),
+        "seeds": list(seeds),
+        "weights": weights.tolist() if method == "convex" else None,
         "shape": list(destination.shape), "dataset_sha256": manifests[0]["dataset_sha256"],
         "station_order_sha256": manifests[0]["station_order_sha256"],
         "source_checkpoint_sha256": [item["checkpoint_sha256"] for item in manifests],

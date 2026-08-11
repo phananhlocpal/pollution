@@ -11,6 +11,19 @@
     "43": 16.044116973876953,
     "44": 16.083044052124023
   },
+  "single_model_three_seed": {
+    "mean_test_mae": 16.128512064615887,
+    "std_test_mae": 0.09315980753392577,
+    "headline": true
+  },
+  "uniform_mean_ensemble": {
+    "weights": null,
+    "test_mae": 15.812956809997559,
+    "test_rmse": 24.308374404907227,
+    "test_smape_official": 0.37177011370658875,
+    "day_mae": [13.698369979858398, 16.511491775512695, 17.228994369506836],
+    "secondary": true
+  },
   "frozen_convex_ensemble": {
     "weights_by_seed_42_43_44": [
       0.3219134746662225,
@@ -29,7 +42,7 @@
     "mae_improvement_over_paper": 1.1113824081420915,
     "relative_mae_improvement_percent": 6.568453948830328
   },
-  "mean_ensemble_test_mae": 15.812956809997559,
-  "primary_claim": "The strict-input recurrent convex ensemble beats all three published AirDDE KnowAir aggregate point estimates.",
-  "caveat": "KnowAir test had already been viewed for the extended track; strict checkpoint identities and ensemble weights were nevertheless fixed before strict test export."
+  "primary_claim": "The three-seed single-model mean has a lower KnowAir MAE point estimate than published AirDDE; the uniform ensemble has lower MAE, RMSE and sMAPE point estimates.",
+  "significance_claim": "No paired significance claim is possible from the paper's aggregate scalars; one-sample intervals for our model are not tests against AirDDE.",
+  "caveat": "The model consumes realized future core meteorology; exact information parity with the paper is unverified. KnowAir test had also been viewed earlier at project level."
 }

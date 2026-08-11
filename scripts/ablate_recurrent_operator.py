@@ -20,7 +20,7 @@ VARIANTS = {
     "no_source": {"use_source": False},
     "no_lagged_transport": {"use_lagged_transport": False},
     "no_month": {"use_month": False},
-    "strict_features": {"use_auxiliary": False, "use_month": False},
+    "core_meteorology": {"use_auxiliary": False, "use_month": False},
 }
 
 

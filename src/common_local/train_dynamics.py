@@ -10,7 +10,10 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from .data import CommonLocalWindowDataset, load_panel
+from .data import (
+    CommonLocalWindowDataset, GAGNNWindowDataset, load_gagnn_metadata,
+    load_panel, load_standard_panel,
+)
 from .dynamics import TransportSourceRecurrentForecaster
 from .train import _loader, _run_epoch, choose_device
 
@@ -18,10 +21,28 @@ from .train import _loader, _run_epoch, choose_device
 def run_seed(args, seed):
     random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
     root = Path(args.root)
-    panel = load_panel(root)
+    if args.gagnn_dir:
+        if args.future_weather_mode == "observed":
+            raise ValueError("GAGNN provides historical covariates only; choose persistence or learned")
+        panel = load_gagnn_metadata(root / args.gagnn_dir)
+    else:
+        panel = (
+            load_standard_panel(root / args.panel_npz, args.expected_stations)
+            if args.panel_npz else load_panel(root)
+        )
     device = choose_device(args.device)
-    train_set = CommonLocalWindowDataset(panel, "train", args.max_train_samples)
-    val_set = CommonLocalWindowDataset(panel, "val", args.max_eval_samples)
+    if args.gagnn_dir:
+        train_set = GAGNNWindowDataset(root / args.gagnn_dir, "train", panel, args.max_train_samples)
+        val_set = GAGNNWindowDataset(root / args.gagnn_dir, "val", panel, args.max_eval_samples)
+        history, horizon = panel.history, panel.horizon
+    else:
+        train_set = CommonLocalWindowDataset(
+            panel, "train", args.max_train_samples, args.history, args.horizon
+        )
+        val_set = CommonLocalWindowDataset(
+            panel, "val", args.max_eval_samples, args.history, args.horizon
+        )
+        history, horizon = args.history, args.horizon
     train_loader = _loader(train_set, args.batch_size, seed, True)
     val_loader = _loader(val_set, args.batch_size, seed, False)
     config = {
@@ -35,16 +56,20 @@ def run_seed(args, seed):
         "use_lagged_transport": not args.disable_lagged_transport,
         "use_auxiliary": not args.disable_auxiliary,
         "use_month": not args.disable_month,
+        "future_weather_mode": args.future_weather_mode,
+        "weather_hidden_dim": args.weather_hidden_dim,
+        "weather_loss_weight": args.weather_loss_weight,
+        "horizon": horizon,
     }
+    config["weather_dim"] = panel.weather_dim if args.gagnn_dir else panel.values.shape[-1] - 1
     model = TransportSourceRecurrentForecaster(
-        root / "data/benchmarks/knowair/city.txt",
-        stations=len(panel.stations), **config,
+        root / "data/benchmarks/knowair/city.txt" if not (args.panel_npz or args.gagnn_dir) else None,
+        stations=len(panel.stations), coordinates=panel.coordinates, **config,
     ).to(device)
-    train_end = panel.split_points[0]
-    model.station_threshold.copy_(torch.as_tensor(
-        np.quantile(panel.values[:train_end, :, 0], .9, axis=0),
-        dtype=torch.float32, device=device,
-    ))
+    threshold = panel.target_threshold if args.gagnn_dir else np.quantile(
+        panel.values[:panel.split_points[0], :, 0], .9, axis=0
+    )
+    model.station_threshold.copy_(torch.as_tensor(threshold, dtype=torch.float32, device=device))
     if args.initialize_from:
         initial = torch.load(root / args.initialize_from, map_location=device, weights_only=False)
         missing, unexpected = model.load_state_dict(initial["model_state"], strict=False)
@@ -66,10 +91,11 @@ def run_seed(args, seed):
         f"model=transport_source_recurrent seed={seed} device={device} "
         f"parameters={parameters:,} train={len(train_set)} val={len(val_set)}"
     )
+    overall_key = f"overall_1_{horizon * getattr(panel, 'cadence_hours', 3)}h"
     for epoch in range(1, args.epochs + 1):
         train = _run_epoch(model, train_loader, panel, device, optimizer)
         validation = _run_epoch(model, val_loader, panel, device)
-        mae = validation["metrics"]["overall_1_72h"]["mae"]
+        mae = validation["metrics"][overall_key]["mae"]
         scheduler.step(mae)
         row = {
             "epoch": epoch, "train_loss": train["loss"],
@@ -96,7 +122,8 @@ def run_seed(args, seed):
         "config": config, "parameter_count": parameters,
         "best_epoch": best_epoch, "best_validation_mae": best,
         "validation": validation, "history": history,
-        "training_split": "first 50%", "validation_split": "next 25%",
+        "training_split": "official first 70%" if args.gagnn_dir else "first 50%",
+        "validation_split": "official next 10%" if args.gagnn_dir else "next 25%",
         "test_accessed": False,
     }
     (output / "metrics.json").write_text(json.dumps(payload, indent=2))
@@ -106,11 +133,16 @@ def run_seed(args, seed):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".")
+    parser.add_argument("--panel-npz", help="External standardized lockbox NPZ, relative to root")
+    parser.add_argument("--gagnn-dir", help="Official pre-windowed 209-city GAGNN data directory")
+    parser.add_argument("--expected-stations", type=int, help="Fail if an external lockbox has a different node count")
     parser.add_argument("--output-dir", default="artifacts/transport_source_recurrent")
     parser.add_argument("--seeds", nargs="+", type=int, default=[43])
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--patience", type=int, default=6)
     parser.add_argument("--batch-size", type=int, default=128)
+    parser.add_argument("--history", type=int, default=24)
+    parser.add_argument("--horizon", type=int, default=24)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-5)
     parser.add_argument("--hidden-dim", type=int, default=64)
@@ -124,6 +156,10 @@ def main():
     parser.add_argument("--disable-lagged-transport", action="store_true")
     parser.add_argument("--disable-auxiliary", action="store_true")
     parser.add_argument("--disable-month", action="store_true")
+    parser.add_argument("--future-weather-mode", choices=("observed", "persistence", "learned"),
+                        default="observed")
+    parser.add_argument("--weather-hidden-dim", type=int, default=16)
+    parser.add_argument("--weather-loss-weight", type=float, default=.1)
     parser.add_argument("--device", default="auto")
     parser.add_argument("--max-train-samples", type=int)
     parser.add_argument("--max-eval-samples", type=int)
