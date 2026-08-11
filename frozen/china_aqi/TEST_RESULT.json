@@ -10,7 +10,7 @@
   "single_model_three_seed_mean": {"mae": 11.429864565531412, "rmse": 20.94898287455241, "mape": 17.944680154323578},
   "single_model_three_seed_std": {"mae": 0.011518691170224544, "rmse": 0.020033623111878934, "mape": 0.05189079548707527},
   "uniform_mean_ensemble": {"mae": 11.302510261535645, "rmse": 20.787057876586914, "mape": 17.729511857032776},
-  "published_airdde": {"mae": 17.03, "rmse": 29.91, "mape": 30.82},
-  "claim": "Lower China-AQI point estimates than published AirDDE on all three aggregate metrics after a pre-test checkpoint freeze.",
+  "published_airdde_different_96x24_protocol": {"mae": 17.03, "rmse": 29.91, "mape": 30.82},
+  "claim": "Strong frozen external generalization on the original GAGNN 24x6 protocol; not directly comparable with AirDDE's published 96x24 metrics.",
   "test_accessed": true
 }

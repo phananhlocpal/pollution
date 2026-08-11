@@ -148,6 +148,11 @@ History-only core-meteorology runs never read the realized future-weather tensor
 They obtained validation MAE 20.7945 and 20.7071, respectively, and were rejected
 without opening their KnowAir test predictions.
 
+The factorized history-only latent-forcing V2 was subsequently run for all three
+seeds. It obtained `20.6533 / 20.8487 / 20.8613` validation MAE (mean
+`20.7878 +/- 0.0952`) and failed the predeclared `<=18.0` gate. Its KnowAir test
+and the corrected China-AQI 96-to-24 test both remain unopened.
+
 The independently retrained validation ablation matrix (three seeds per variant)
 is launched by:
 
@@ -159,7 +164,8 @@ This covers no-transport, no-source/sink, no-lagged-transport, and a 72,630-para
 direct counterpart against the 72,659-parameter recurrent model. Its summary is
 separate from frozen-checkpoint knockout diagnostics.
 
-The external lockbox adapter accepts a standardized NPZ and variable station,
-weather and horizon dimensions. Exact-data requirements and commands for China-AQI
-and US-PM are in `EXTERNAL_REPLICATION.md`; similar local datasets must not be
-silently substituted for the authors' unavailable tensors.
+The corrected external comparison is China-AQI only. Exact reconstruction,
+history-only latent-forcing training, freeze, and evaluation commands are in
+`EXTERNAL_REPLICATION.md`. The old 24h-to-6h GAGNN result is retained strictly as
+an external generalization result and is not compared with AirDDE's 96h-to-24h
+published metrics.

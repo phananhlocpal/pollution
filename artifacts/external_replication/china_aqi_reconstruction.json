@@ -1,0 +1,62 @@
+{
+  "train": {
+    "x_shape": [
+      14259,
+      24,
+      209,
+      8
+    ],
+    "y_shape": [
+      14259,
+      6,
+      209
+    ],
+    "adjacent_x_overlap_exact": true,
+    "adjacent_y_overlap_exact": true,
+    "y0_matches_x_plus_24_target": true,
+    "windows_96_to_24": 14169
+  },
+  "val": {
+    "x_shape": [
+      2037,
+      24,
+      209,
+      8
+    ],
+    "y_shape": [
+      2037,
+      6,
+      209
+    ],
+    "adjacent_x_overlap_exact": true,
+    "adjacent_y_overlap_exact": true,
+    "y0_matches_x_plus_24_target": true,
+    "windows_96_to_24": 1947
+  },
+  "test": {
+    "x_shape": [
+      4074,
+      24,
+      209,
+      8
+    ],
+    "y_shape": [
+      4074,
+      6,
+      209
+    ],
+    "adjacent_x_overlap_exact": true,
+    "adjacent_y_overlap_exact": true,
+    "y0_matches_x_plus_24_target": true,
+    "windows_96_to_24": 3984
+  },
+  "reconstructable": true,
+  "dataset": "official GAGNN China-AQI release",
+  "reconstructed_protocol": {
+    "history": 96,
+    "horizon": 24,
+    "cadence_hours": 1
+  },
+  "split_policy": "each released split reconstructed independently; boundaries never joined",
+  "future_covariates": "historical factors only; no realized target-period meteorology"
+}

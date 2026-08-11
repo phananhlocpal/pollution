@@ -1,8 +1,8 @@
-# AirDDE external-lockbox replication
+# KnowAir and China-AQI comparison protocol
 
-The Transport--Source Recurrent Operator is frozen on KnowAir. China-AQI and
-US-PM are treated as new lockboxes: no architecture redesign or test-driven
-selection is allowed. Their published AirDDE reference metrics are recorded in
+The project now compares only KnowAir and China-AQI. Architecture selection uses
+KnowAir train/validation. China-AQI evaluation uses the AirDDE 96h-to-24h task;
+published AirDDE reference metrics are recorded in
 `artifacts/external_replication/protocols.json`.
 
 ## Current data status
@@ -11,35 +11,42 @@ The pinned public AirDDE repository contains KnowAir only. AirDDE attributes its
 two external datasets to GAGNN. The official GAGNN repository and its 993 MB
 Google Drive archive are now downloaded locally at commit
 `509ac7d6eb55914979fc45f6d23e967021cfd270`. The archive is the exact 209-city
-China-AQI release: 24 historical hourly steps, 6 forecast steps, and already
-separated 70%/10%/20% windows. AirDDE's Table 1 also says 209, while one prose
+China-AQI release: overlapping 24-history/6-target hourly windows, already
+separated into train/validation/test. AirDDE's Table 1 also says 209, while one prose
 sentence says 203; the released tensor and original GAGNN paper resolve the
-executable protocol to 209.
+station count to 209.
 
 Recreate and verify that checkout/archive with:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\prepare_gagnn.py
+.\.venv\Scripts\python.exe scripts\audit_gagnn_reconstruction.py
 ```
 
-The corresponding exact 175-county US-PM tensor is not in either public repository
-and remains unavailable. Similar US datasets are not substituted under that name.
+The audit proves exact unit-stride overlap for `x` and `y`, and exact agreement
+between each released target and the target channel 24 hours later. It therefore
+reconstructs 96h-to-24h samples independently inside each split, never across a
+boundary. Counts are 14,169 train, 1,947 validation and 3,984 test windows.
 
-## Frozen China-AQI result
+## Historical China-AQI 24h-to-6h result
 
 After validation training, the three checkpoint hashes were recorded in
 `frozen/china_aqi/MANIFEST.json` before the test loader was invoked. The fresh
 single-model three-seed test mean is MAE `11.4299 +/- 0.0115`, RMSE
-`20.9490 +/- 0.0200`, and MAPE `17.9447 +/- 0.0519`, versus published AirDDE
-`17.03 / 29.91 / 30.82`. All three individual MAEs are between 11.41 and 11.44.
+`20.9490 +/- 0.0200`, and MAPE `17.9447 +/- 0.0519`. All three individual MAEs
+are between 11.41 and 11.44.
 The secondary uniform ensemble reaches `11.3025 / 20.7871 / 17.7295`.
+
+These numbers answer the original GAGNN 24h-to-6h task. They are **not directly
+comparable** with AirDDE's published China-AQI `17.03 / 29.91 / 30.82`, which uses
+96h history and a 24h forecast.
 
 ## Frozen input contract
 
 For an exact dataset not already supported by a direct release adapter, create an
 NPZ with:
 
-- `target`: float array `[time, station]` (AQI for China-AQI, PM2.5 for US-PM);
+- `target`: float array `[time, station]`;
 - `weather`: float array `[time, station, weather_feature]`;
 - `coordinates`: float array `[station, 2]` in longitude/latitude order;
 - `station_ids`: optional string array `[station]`.
@@ -61,22 +68,33 @@ The loader fits normalization on the first 70% only and exposes chronological
 ```powershell
 .\.venv\Scripts\python.exe -m common_local.train_dynamics `
   --gagnn-dir data\benchmarks\china_aqi_gagnn `
-  --seeds 42 43 44 --epochs 30 --patience 6 --batch-size 256 `
-  --disable-auxiliary --disable-month --future-weather-mode learned `
-  --output-dir artifacts\china_aqi_history_learned `
+  --gagnn-protocol 96x24 --future-weather-mode latent `
+  --seeds 42 43 44 --epochs 30 --patience 6 --batch-size 64 `
+  --disable-lagged-transport --disable-auxiliary --disable-month `
+  --output-dir artifacts\china_aqi_96x24_latent_v2 `
   --device cuda
 ```
 
 The GAGNN release exposes historical covariates, not realized future covariates, so
-the causal learned-weather mode is mandatory here. Freeze the three checkpoints
-with `scripts/freeze_china_aqi.py`, then and only then run
-`scripts/evaluate_china_aqi.py --allow-test`. For US-PM, use the generic NPZ route
-with `--expected-stations 175` once the exact tensor is obtained. The training
-command itself remains validation-only.
+the latent-forcing mode is mandatory for the corrected comparison. It evolves
+global/local meteorological latent states without reconstructing target-period
+weather, and the V2 transport operator has no explicit lag branch. Freeze the
+three checkpoints with `scripts/freeze_china_aqi_96x24.py`, then and only then run
+`scripts/evaluate_china_aqi_96x24.py --allow-test`. The training command itself
+remains validation-only.
+
+## V2 selection outcome
+
+The three-seed history-only V2 completed on KnowAir validation with MAEs
+`20.6533 / 20.8487 / 20.8613`, mean `20.7878 +/- 0.0952`. This failed the
+predeclared `<=18.0` gate. V2 is therefore rejected, no corrected China-AQI
+checkpoint was frozen, and its 96h-to-24h test remains unopened. The reconstructable
+China protocol is ready, but running it with this rejected architecture would be
+test-driven model development rather than a valid external confirmation.
 
 ## Reproducibility gate
 
-Before accepting a result, verify exact station count (209 or 175), raw feature
+Before accepting a result, verify exact station count (209), raw feature
 names/order, time range and cadence, sample counts after windowing, authors'
 missing-data treatment, target definition/unit, and that the split boundaries
 match the published benchmark. Set `--history` and `--horizon` from the authors'

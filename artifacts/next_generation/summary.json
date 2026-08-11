@@ -147,6 +147,16 @@
     },
     "decision": "Retain sequential source/sink and transport claims; reject a distinct lag-pathway benefit claim."
   },
+  "history_only_latent_v2": {
+    "selection_split": "KnowAir validation",
+    "seeds": [42, 43, 44],
+    "validation_mae": [20.65328598022461, 20.848674774169922, 20.861310958862305],
+    "validation_mean_mae": 20.787757237752277,
+    "validation_std_mae": 0.09522537342781269,
+    "selection_gate_max_mae": 18.0,
+    "passed": false,
+    "decision": "reject; corrected China-AQI 96x24 test remains unopened"
+  },
   "residual_modes": {
     "variance_explained_32_modes": 0.6890719532966614,
     "causal_72h_delta_mae": 1.4380073547363281,
@@ -172,7 +182,8 @@
       "rmse": 20.787057876586914,
       "mape": 17.729511857032776
     },
-    "published_airdde": {"mae": 17.03, "rmse": 29.91, "mape": 30.82}
+    "published_airdde_different_96x24_protocol": {"mae": 17.03, "rmse": 29.91, "mape": 30.82},
+    "interpretation": "Original GAGNN 24x6 external generalization only; not directly comparable with AirDDE's published 96x24 benchmark."
   },
   "efficiency_batch8": {
     "transport_source_recurrent_median_ms_per_origin": 4.024863958358765,

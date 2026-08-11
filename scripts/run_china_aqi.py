@@ -1,4 +1,4 @@
-"""Wait for KnowAir ablations, then train/freeze/evaluate exact China-AQI."""
+"""Train, freeze, then evaluate corrected history-only China-AQI 96h->24h."""
 
 from __future__ import annotations
 
@@ -23,15 +23,22 @@ def main():
         print("Waiting for retrained KnowAir ablations to release the GPU...", flush=True)
         time.sleep(10)
     run(
+        "scripts/audit_gagnn_reconstruction.py",
+    )
+    run(
         "-m", "common_local.train_dynamics",
         "--gagnn-dir", "data/benchmarks/china_aqi_gagnn",
-        "--future-weather-mode", "learned", "--disable-auxiliary", "--disable-month",
+        "--gagnn-protocol", "96x24", "--future-weather-mode", "latent",
+        "--disable-lagged-transport", "--disable-auxiliary", "--disable-month",
         "--seeds", "42", "43", "44", "--epochs", "30", "--patience", "6",
-        "--batch-size", "256", "--output-dir", "artifacts/china_aqi_history_learned",
+        "--batch-size", "64", "--output-dir", "artifacts/china_aqi_96x24_latent_v2",
         "--device", "cuda",
     )
-    run("scripts/freeze_china_aqi.py")
-    run("scripts/evaluate_china_aqi.py", "--allow-test", "--batch-size", "256", "--device", "cuda")
+    run("scripts/freeze_china_aqi_96x24.py")
+    run(
+        "scripts/evaluate_china_aqi_96x24.py", "--allow-test",
+        "--batch-size", "64", "--device", "cuda",
+    )
 
 
 if __name__ == "__main__":

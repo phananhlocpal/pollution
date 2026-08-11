@@ -142,6 +142,12 @@ This negative result confirms that realized target-period meteorology accounts f
 a material part of the core-meteo track's advantage; it does not support an
 identical-information AirDDE claim.
 
+The subsequent factorized latent-forcing V2 removed explicit future-weather
+reconstruction and the explicit lagged-transport input. Its independently trained
+KnowAir validation MAEs were 20.6533 / 20.8487 / 20.8613 across seeds 42/43/44,
+for 20.7878 +/- 0.0952. It failed the predeclared <=18.0 selection gate and was
+rejected. Consequently, the corrected China-AQI 96h-to-24h test was not opened.
+
 ## Residuals before and after recurrence
 
 Across the three validation seeds, recurrence reduces horizon MAE increasingly from
@@ -154,26 +160,25 @@ winter pollution, and weaker 72h boundary-layer/ventilation signals (-0.0246 and
 -0.0147 incremental MAE). Full tables are in
 `artifacts/residual_generation_comparison/summary.json`.
 
-## External lockboxes
+## External China-AQI protocol
 
-The frozen operator now has both a dataset-neutral NPZ adapter and a direct adapter
-for the official GAGNN release. The 209-city China-AQI archive has been downloaded
-and its exact 24h-to-6h, hourly, 7:1:2 protocol is used without future covariate
-leakage. (AirDDE's prose says 203 once, but its Table 1 and the source release use
-209.) After the three validation checkpoints were hashed and frozen, the fresh test
-was opened once:
+The frozen operator has a direct adapter for the official 209-city GAGNN release.
+The historical experiment used the release's 24h-to-6h task without future
+covariate leakage. After three validation checkpoints were hashed and frozen, its
+test was opened once:
 
-| China-AQI test metric | Single-model 3-seed mean | AirDDE paper | Relative reduction |
-| --- | ---: | ---: | ---: |
-| MAE | **11.4299 +/- 0.0115** | 17.03 | **32.88%** |
-| RMSE | **20.9490 +/- 0.0200** | 29.91 | **29.96%** |
-| MAPE | **17.9447 +/- 0.0519** | 30.82 | **41.78%** |
+| Original GAGNN 24h-to-6h metric | Single-model 3-seed mean |
+| --- | ---: |
+| MAE | **11.4299 +/- 0.0115** |
+| RMSE | **20.9490 +/- 0.0200** |
+| MAPE | **17.9447 +/- 0.0519** |
 
-All individual seed MAEs (11.4399 / 11.4137 / 11.4360) beat the published point
-estimate. The secondary uniform ensemble reaches 11.3025 MAE, 20.7871 RMSE and
-17.7295 MAPE. Exact US-PM (175 counties) remains absent from both public
-repositories, so no substitute is scored under that benchmark name.
-`EXTERNAL_REPLICATION.md` records provenance, input contract, freeze gate and commands.
+The secondary uniform ensemble reaches 11.3025 MAE, 20.7871 RMSE and 17.7295
+MAPE. These values are not compared with AirDDE's published China-AQI values,
+because AirDDE uses 96h history and a 24h forecast. Exact overlap auditing now
+supports split-local 96h-to-24h reconstruction, and the corrected history-only
+latent-forcing V2 experiment is the only valid direct comparison path.
+`EXTERNAL_REPLICATION.md` records provenance, reconstruction, freeze gate and commands.
 
 ## Optional fairness work
 

@@ -55,9 +55,13 @@ class TransportSourceRecurrentForecaster(nn.Module):
         self.use_lagged_transport = use_lagged_transport
         self.use_auxiliary = use_auxiliary
         self.use_month = use_month
-        if future_weather_mode not in {"observed", "persistence", "learned"}:
+        if future_weather_mode not in {"observed", "persistence", "learned", "latent"}:
             raise ValueError(f"Unknown future weather mode: {future_weather_mode}")
         self.future_weather_mode = future_weather_mode
+        self.latent_forcing = future_weather_mode == "latent"
+        # V2 deliberately removes the explicit previous-state transport path.
+        if self.latent_forcing:
+            self.use_lagged_transport = False
         self.weather_loss_weight = weather_loss_weight
         self.common_encoder = nn.GRU(1 + weather_dim + 1, hidden_dim, batch_first=True)
         self.local_encoder = nn.GRU(3 + weather_dim * 3, hidden_dim, batch_first=True)
@@ -67,17 +71,30 @@ class TransportSourceRecurrentForecaster(nn.Module):
             self.weather_head = nn.Linear(weather_hidden_dim, weather_dim)
             nn.init.zeros_(self.weather_head.weight)
             nn.init.zeros_(self.weather_head.bias)
+        if self.latent_forcing:
+            self.global_forcing_encoder = nn.GRU(
+                weather_dim, weather_hidden_dim, batch_first=True
+            )
+            self.local_forcing_encoder = nn.GRU(
+                weather_dim, weather_hidden_dim, batch_first=True
+            )
+            self.global_forcing_cell = nn.GRUCell(1, weather_hidden_dim)
+            self.local_forcing_cell = nn.GRUCell(
+                1 + weather_hidden_dim, weather_hidden_dim
+            )
+            self.latent_transport_signal = nn.Linear(weather_hidden_dim, 1)
         self.station_embedding = nn.Embedding(stations, station_dim)
         self.month_embedding = nn.Embedding(12, month_dim)
 
-        common_future_dim = 1 + weather_dim + auxiliary_dim + month_dim
-        local_future_dim = (
-            1 + weather_dim + auxiliary_dim + month_dim + station_dim + 2
-        )
+        forcing_dim = weather_hidden_dim if self.latent_forcing else weather_dim
+        common_future_dim = 1 + forcing_dim + auxiliary_dim + month_dim
+        local_feature_dim = 1 + forcing_dim + auxiliary_dim + month_dim + station_dim
+        operator_terms = 1 if self.latent_forcing else 2
+        local_future_dim = local_feature_dim + operator_terms
         self.common_cell = nn.GRUCell(common_future_dim, hidden_dim)
         self.local_cell = nn.GRUCell(local_future_dim, hidden_dim)
         self.transport_head = _zero_last(nn.Sequential(
-            nn.Linear(hidden_dim + 3, operator_dim), nn.GELU(),
+            nn.Linear(hidden_dim + operator_terms + 1, operator_dim), nn.GELU(),
             nn.Linear(operator_dim, 1),
         ))
         self.common_source_head = _zero_last(nn.Sequential(
@@ -85,16 +102,16 @@ class TransportSourceRecurrentForecaster(nn.Module):
             nn.Linear(operator_dim, 1),
         ))
         self.local_source_head = _zero_last(nn.Sequential(
-            nn.Linear(hidden_dim + local_future_dim - 2, operator_dim), nn.GELU(),
+            nn.Linear(hidden_dim + local_feature_dim, operator_dim), nn.GELU(),
             nn.Linear(operator_dim, 1),
         ))
         if event_expert:
             self.event_source_head = _zero_last(nn.Sequential(
-                nn.Linear(hidden_dim + local_future_dim - 2, operator_dim), nn.GELU(),
+                nn.Linear(hidden_dim + local_feature_dim, operator_dim), nn.GELU(),
                 nn.Linear(operator_dim, 1),
             ))
             self.event_gate = nn.Sequential(
-                nn.Linear(hidden_dim + local_future_dim, operator_dim), nn.GELU(),
+                nn.Linear(hidden_dim + local_feature_dim + 2, operator_dim), nn.GELU(),
                 nn.Linear(operator_dim, 1),
             )
             nn.init.constant_(self.event_gate[-1].bias, -2.0)
@@ -137,6 +154,27 @@ class TransportSourceRecurrentForecaster(nn.Module):
         weights = torch.where(total > 1e-8, weights / total.clamp_min(1e-8), fallback)
         return (weights * neighbor_state).sum(-1) - state
 
+    def _spatial_innovation(self, state: torch.Tensor) -> torch.Tensor:
+        """Current-state graph transport used by history-only latent V2."""
+        neighbor_state = state[:, self.neighbor_index]
+        weights = self.edge_weight[None]
+        weights = weights / weights.sum(-1, keepdim=True).clamp_min(1e-8)
+        return (weights * neighbor_state).sum(-1) - state
+
+    def _initial_latent_forcing(self, weather: torch.Tensor):
+        batch_size, history, stations, weather_dim = weather.shape
+        global_history = weather.mean(2)
+        local_history = weather - global_history[:, :, None]
+        _, global_hidden = self.global_forcing_encoder(global_history)
+        flattened = local_history.permute(0, 2, 1, 3).reshape(
+            batch_size * stations, history, weather_dim
+        )
+        _, local_hidden = self.local_forcing_encoder(flattened)
+        return (
+            global_hidden[-1],
+            local_hidden[-1].reshape(batch_size, stations, -1),
+        )
+
     def _causal_future_weather(self, weather: torch.Tensor) -> torch.Tensor:
         if self.future_weather_mode == "observed":
             raise RuntimeError("Observed future weather is supplied directly")
@@ -166,8 +204,10 @@ class TransportSourceRecurrentForecaster(nn.Module):
         else:
             auxiliary = x.new_zeros(batch_size, self.horizon, stations, 3)
         pm, weather = x[..., :1], x[..., 1:]
-        if self.future_weather_mode != "observed":
+        if self.future_weather_mode in {"persistence", "learned"}:
             future_weather = self._causal_future_weather(weather)
+        if self.latent_forcing:
+            global_forcing, local_forcing = self._initial_latent_forcing(weather)
         common_pm = pm.mean(2)
         residual_pm = pm - common_pm[:, :, None]
         common_input = torch.cat((
@@ -189,7 +229,23 @@ class TransportSourceRecurrentForecaster(nn.Module):
         predictions, transports, sources, gates = [], [], [], []
         for step in range(self.horizon):
             state = state_history[-1]
-            weather_step = future_weather[:, step]
+            if self.latent_forcing:
+                state_mean = state.mean(-1, keepdim=True)
+                global_forcing = self.global_forcing_cell(state_mean, global_forcing)
+                global_nodes = global_forcing[:, None].expand(-1, stations, -1)
+                residual_forcing_input = torch.cat((
+                    (state - state_mean)[..., None], global_nodes,
+                ), -1)
+                local_forcing = self.local_forcing_cell(
+                    residual_forcing_input.reshape(batch_size * stations, -1),
+                    local_forcing.reshape(batch_size * stations, -1),
+                ).reshape(batch_size, stations, -1)
+                common_forcing_step = global_forcing
+                local_forcing_step = local_forcing
+            else:
+                weather_step = future_weather[:, step]
+                common_forcing_step = weather_step.mean(1)
+                local_forcing_step = weather_step
             auxiliary_step = auxiliary[:, step]
             if self.use_month:
                 month = self.month_embedding(batch["future_month"][:, step])
@@ -197,17 +253,23 @@ class TransportSourceRecurrentForecaster(nn.Module):
                 month = x.new_zeros(batch_size, self.month_embedding.embedding_dim)
             month_nodes = month[:, None].expand(-1, stations, -1)
             common_features = torch.cat((
-                state.mean(-1, keepdim=True), weather_step.mean(1),
+                state.mean(-1, keepdim=True), common_forcing_step,
                 auxiliary_step.mean(1), month,
             ), -1)
             common_hidden = self.common_cell(common_features, common_hidden)
 
-            innovation_now = self._wind_innovation(
-                state, weather_step[..., 4], weather_step[..., 5]
-            )
-            innovation_lag = self._wind_innovation(
-                state_history[-2], weather_step[..., 4], weather_step[..., 5]
-            )
+            if self.latent_forcing:
+                innovation_now = self._spatial_innovation(state)
+                innovation_lag = torch.zeros_like(innovation_now)
+                transport_context = self.latent_transport_signal(local_forcing_step)
+            else:
+                innovation_now = self._wind_innovation(
+                    state, weather_step[..., 4], weather_step[..., 5]
+                )
+                innovation_lag = self._wind_innovation(
+                    state_history[-2], weather_step[..., 4], weather_step[..., 5]
+                )
+                transport_context = weather_step[..., 3:4]
             if not self.use_lagged_transport:
                 innovation_lag = torch.zeros_like(innovation_lag)
             if not self.use_transport:
@@ -215,21 +277,31 @@ class TransportSourceRecurrentForecaster(nn.Module):
                 innovation_lag = torch.zeros_like(innovation_lag)
             residual_state = state - state.mean(-1, keepdim=True)
             local_features = torch.cat((
-                residual_state[..., None], weather_step, auxiliary_step,
+                residual_state[..., None], local_forcing_step, auxiliary_step,
                 month_nodes, station,
             ), -1)
-            local_recurrent = torch.cat((
-                local_features, innovation_now[..., None], innovation_lag[..., None],
-            ), -1)
+            if self.latent_forcing:
+                local_recurrent = torch.cat((
+                    local_features, innovation_now[..., None],
+                ), -1)
+            else:
+                local_recurrent = torch.cat((
+                    local_features, innovation_now[..., None], innovation_lag[..., None],
+                ), -1)
             local_hidden = self.local_cell(
                 local_recurrent.reshape(batch_size * stations, -1),
                 local_hidden.reshape(batch_size * stations, -1),
             ).reshape(batch_size, stations, -1)
 
-            transport_input = torch.cat((
-                local_hidden, innovation_now[..., None], innovation_lag[..., None],
-                weather_step[..., 3:4],
-            ), -1)
+            if self.latent_forcing:
+                transport_input = torch.cat((
+                    local_hidden, innovation_now[..., None], transport_context,
+                ), -1)
+            else:
+                transport_input = torch.cat((
+                    local_hidden, innovation_now[..., None], innovation_lag[..., None],
+                    transport_context,
+                ), -1)
             transport = self.max_step * torch.tanh(self.transport_head(transport_input).squeeze(-1))
             transport = self._zero_mean(transport)
             if not self.use_transport:

@@ -1,56 +1,55 @@
 {
-  "architecture_policy": "Frozen after KnowAir; only input/output dimensions and station graph size adapt to each dataset.",
-  "selection_policy": "Train and validation only; test remains sealed until seeds and uniform ensemble are frozen.",
-  "data_status": "china_aqi_exact_release_downloaded; us_pm_blocked_missing_exact_author_tensor",
-  "substitution_policy": "Do not substitute similar China or US air-quality datasets under the AirDDE benchmark names.",
+  "scope": ["knowair", "china_aqi"],
+  "architecture_policy": "Select V2 on KnowAir train/validation; freeze before corrected China-AQI test evaluation.",
+  "selection_policy": "Training and checkpoint selection use train/validation only.",
+  "substitution_policy": "Do not substitute a different dataset under either benchmark name.",
   "benchmarks": {
+    "knowair": {
+      "target": "PM2.5",
+      "stations": 184,
+      "meteorological_factors": 17,
+      "history_steps": 24,
+      "forecast_steps": 24,
+      "cadence_hours": 3,
+      "chronological_split": [0.5, 0.25, 0.25],
+      "published_airdde": {"mae": 16.92, "rmse": 27.78, "smape": 0.38},
+      "history_only_latent_v2_validation": {
+        "seeds": [42, 43, 44],
+        "mae": [20.65328598022461, 20.848674774169922, 20.861310958862305],
+        "mean_mae": 20.787757237752277,
+        "std_mae": 0.09522537342781269,
+        "selection_gate_max_mae": 18.0,
+        "passed": false
+      },
+      "comparison_status": "history-only latent V2 rejected on validation; KnowAir test remains unopened for this model"
+    },
     "china_aqi": {
       "target": "AQI",
       "stations": 209,
       "meteorological_factors": 7,
-      "chronological_split": [0.7, 0.1, 0.2],
-      "published_airdde": {"mae": 17.03, "rmse": 29.91, "mape": 30.82},
-      "history_steps": 24,
-      "forecast_steps": 6,
+      "history_steps": 96,
+      "forecast_steps": 24,
       "cadence_hours": 1,
+      "released_split_policy": "train/validation/test reconstructed independently from exact unit-stride GAGNN windows",
+      "published_airdde": {"mae": 17.03, "rmse": 29.91, "mape": 30.82},
       "source": "https://github.com/Friger/GAGNN commit 509ac7d6eb55914979fc45f6d23e967021cfd270",
       "dataset_archive_sha256": "4decea9aaafcd60e08e495083d708da238ab84ba0b507d42fe692c7405b52fd8",
       "released_x_shape": "[sample,24,209,8]",
       "released_y_shape": "[sample,6,209]",
+      "reconstructed_window_counts": {"train": 14169, "validation": 1947, "test": 3984},
       "frozen_operator_reorder": {
         "target": "released column 7 (AQI)",
-        "weather": "released columns [3,1,2,4,5,6,0] so speed/direction-vector occupy operator columns 3/4/5"
+        "weather": "released columns [3,1,2,4,5,6,0]"
       },
-      "protocol_note": "AirDDE prose says 203 once, but its Table 1, original GAGNN paper/code and released tensor all use 209.",
-      "local_exact_tensor_available": true,
-      "test_accessed": true,
-      "ours_single_model_three_seed_mean": {
-        "mae": 11.429864565531412,
-        "rmse": 20.94898287455241,
-        "mape": 17.944680154323578
+      "information_set": "historical AQI and historical meteorology only",
+      "comparison_status": "corrected 96x24 training and test evaluation blocked by failed KnowAir validation gate",
+      "historical_24x6_result": {
+        "single_model_three_seed_mean": {"mae": 11.429864565531412, "rmse": 20.94898287455241, "mape": 17.944680154323578},
+        "interpretation": "original GAGNN 24x6 external generalization; not comparable with published AirDDE 96x24 metrics",
+        "test_accessed": true
       },
-      "ours_uniform_mean_ensemble": {
-        "mae": 11.302510261535645,
-        "rmse": 20.787057876586914,
-        "mape": 17.729511857032776
-      }
-    },
-    "us_pm": {
-      "target": "PM2.5",
-      "stations": 175,
-      "meteorological_factors": 7,
-      "cadence_hours": 1,
-      "chronological_split": [0.7, 0.1, 0.2],
-      "published_airdde": {"mae": 3.53, "rmse": 4.87, "mape": 10.94},
-      "local_exact_tensor_available": false,
-      "test_accessed": false
+      "corrected_96x24_test_accessed": false,
+      "disclosure": "The released test period was previously viewed under the different 24x6 task."
     }
-  },
-  "required_npz_arrays": {
-    "target": "[T,N]",
-    "weather": "[T,N,W] with speed/sin/cos at columns 3/4/5",
-    "coordinates": "[N,2] longitude/latitude",
-    "station_ids": "optional [N]",
-    "cadence_hours": "optional scalar integer"
   }
 }

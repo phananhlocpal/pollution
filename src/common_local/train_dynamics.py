@@ -11,7 +11,8 @@ import numpy as np
 import torch
 
 from .data import (
-    CommonLocalWindowDataset, GAGNNWindowDataset, load_gagnn_metadata,
+    CommonLocalWindowDataset, GAGNNAirDDEWindowDataset, GAGNNWindowDataset,
+    audit_gagnn_overlap, load_gagnn_metadata,
     load_panel, load_standard_panel,
 )
 from .dynamics import TransportSourceRecurrentForecaster
@@ -23,8 +24,14 @@ def run_seed(args, seed):
     root = Path(args.root)
     if args.gagnn_dir:
         if args.future_weather_mode == "observed":
-            raise ValueError("GAGNN provides historical covariates only; choose persistence or learned")
-        panel = load_gagnn_metadata(root / args.gagnn_dir)
+            raise ValueError("GAGNN provides historical covariates only; choose persistence, learned, or latent")
+        if args.gagnn_protocol == "96x24" and args.future_weather_mode != "latent":
+            raise ValueError("Corrected GAGNN 96x24 runs require history-only latent forcing")
+        if args.gagnn_protocol == "96x24":
+            audit = audit_gagnn_overlap(root / args.gagnn_dir)
+            if not audit["reconstructable"]:
+                raise ValueError("GAGNN windows do not support exact split-local reconstruction")
+        panel = load_gagnn_metadata(root / args.gagnn_dir, args.gagnn_protocol)
     else:
         panel = (
             load_standard_panel(root / args.panel_npz, args.expected_stations)
@@ -32,8 +39,12 @@ def run_seed(args, seed):
         )
     device = choose_device(args.device)
     if args.gagnn_dir:
-        train_set = GAGNNWindowDataset(root / args.gagnn_dir, "train", panel, args.max_train_samples)
-        val_set = GAGNNWindowDataset(root / args.gagnn_dir, "val", panel, args.max_eval_samples)
+        dataset_type = (
+            GAGNNAirDDEWindowDataset if args.gagnn_protocol == "96x24"
+            else GAGNNWindowDataset
+        )
+        train_set = dataset_type(root / args.gagnn_dir, "train", panel, args.max_train_samples)
+        val_set = dataset_type(root / args.gagnn_dir, "val", panel, args.max_eval_samples)
         history, horizon = panel.history, panel.horizon
     else:
         train_set = CommonLocalWindowDataset(
@@ -108,7 +119,11 @@ def run_seed(args, seed):
             best, best_epoch, stale = mae, epoch, 0
             torch.save({
                 "model_state": model.state_dict(),
-                "architecture": "transport_source_recurrent",
+                "architecture": (
+                    "latent_forcing_transport_source_recurrent_v2"
+                    if args.future_weather_mode == "latent"
+                    else "transport_source_recurrent"
+                ),
                 "config": config,
             }, checkpoint)
         else:
@@ -118,12 +133,16 @@ def run_seed(args, seed):
     model.load_state_dict(torch.load(checkpoint, map_location=device, weights_only=False)["model_state"])
     validation = _run_epoch(model, val_loader, panel, device)
     payload = {
-        "model": "transport_source_recurrent", "seed": seed,
+        "model": (
+            "latent_forcing_transport_source_recurrent_v2"
+            if args.future_weather_mode == "latent" else "transport_source_recurrent"
+        ), "seed": seed,
         "config": config, "parameter_count": parameters,
         "best_epoch": best_epoch, "best_validation_mae": best,
         "validation": validation, "history": history,
-        "training_split": "official first 70%" if args.gagnn_dir else "first 50%",
-        "validation_split": "official next 10%" if args.gagnn_dir else "next 25%",
+        "training_split": "official released train split" if args.gagnn_dir else "first 50%",
+        "validation_split": "official released validation split" if args.gagnn_dir else "next 25%",
+        "gagnn_protocol": args.gagnn_protocol if args.gagnn_dir else None,
         "test_accessed": False,
     }
     (output / "metrics.json").write_text(json.dumps(payload, indent=2))
@@ -135,6 +154,7 @@ def main():
     parser.add_argument("--root", default=".")
     parser.add_argument("--panel-npz", help="External standardized lockbox NPZ, relative to root")
     parser.add_argument("--gagnn-dir", help="Official pre-windowed 209-city GAGNN data directory")
+    parser.add_argument("--gagnn-protocol", choices=("24x6", "96x24"), default="24x6")
     parser.add_argument("--expected-stations", type=int, help="Fail if an external lockbox has a different node count")
     parser.add_argument("--output-dir", default="artifacts/transport_source_recurrent")
     parser.add_argument("--seeds", nargs="+", type=int, default=[43])
@@ -156,7 +176,7 @@ def main():
     parser.add_argument("--disable-lagged-transport", action="store_true")
     parser.add_argument("--disable-auxiliary", action="store_true")
     parser.add_argument("--disable-month", action="store_true")
-    parser.add_argument("--future-weather-mode", choices=("observed", "persistence", "learned"),
+    parser.add_argument("--future-weather-mode", choices=("observed", "persistence", "learned", "latent"),
                         default="observed")
     parser.add_argument("--weather-hidden-dim", type=int, default=16)
     parser.add_argument("--weather-loss-weight", type=float, default=.1)
@@ -166,7 +186,7 @@ def main():
     args = parser.parse_args()
     rows = [run_seed(args, seed) for seed in args.seeds]
     summary = {
-        "model": "transport_source_recurrent", "seeds": args.seeds,
+        "model": rows[0]["model"], "seeds": args.seeds,
         "validation_mae": [row["best_validation_mae"] for row in rows],
         "validation_mean_mae": float(np.mean([row["best_validation_mae"] for row in rows])),
         "test_accessed": False,

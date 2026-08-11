@@ -50,10 +50,11 @@
     "rmse": 20.787057876586914,
     "mape": 17.729511857032776
   },
-  "published_airdde": {
+  "published_airdde_different_96x24_protocol": {
     "mae": 17.03,
     "rmse": 29.91,
     "mape": 30.82
   },
+  "interpretation": "Original GAGNN 24x6 external generalization only; not directly comparable with AirDDE's published 96x24 benchmark.",
   "test_accessed": true
 }

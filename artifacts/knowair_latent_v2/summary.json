@@ -1,0 +1,29 @@
+{
+  "model": "latent_forcing_transport_source_recurrent_v2",
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "validation_mae": [
+    20.65328598022461,
+    20.848674774169922,
+    20.861310958862305
+  ],
+  "validation_mean_mae": 20.787757237752277,
+  "validation_std_mae": 0.09522537342781269,
+  "validation_mean": {
+    "day1_1_24h": {"mae": 17.119304656982422, "rmse": 27.687744140625, "smape": 0.36380423108736676},
+    "day2_25_48h": {"mae": 21.98823420206706, "rmse": 33.98064422607422, "smape": 0.4508145252863566},
+    "day3_49_72h": {"mae": 23.255757649739582, "rmse": 35.71576690673828, "smape": 0.4725138147672017},
+    "overall_1_72h": {"mae": 20.787757237752277, "rmse": 32.644185384114586, "smape": 0.42904385924339294}
+  },
+  "selection_gate": {"metric": "validation_mae", "required_max": 18.0, "passed": false},
+  "comparators": {
+    "history_weather_persistence_seed43_mae": 20.79450798034668,
+    "causal_weather_gru_seed43_mae": 20.707054138183594
+  },
+  "decision": "reject on KnowAir validation; do not freeze or evaluate corrected China-AQI 96x24",
+  "china_aqi_96x24_test_accessed": false,
+  "test_accessed": false
+}

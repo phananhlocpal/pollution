@@ -5,7 +5,10 @@ import pytest
 import torch
 
 from common_local.correction import FrozenResidualCorrection
-from common_local.data import CommonLocalWindowDataset, FEATURES, Panel, load_standard_panel
+from common_local.data import (
+    CommonLocalWindowDataset, FEATURES, GAGNNAirDDEWindowDataset, Panel,
+    audit_gagnn_overlap, load_standard_panel,
+)
 from common_local.losses import common_local_loss
 from common_local.metrics import validation_report
 from common_local.model import CommonLocalForecaster
@@ -122,7 +125,7 @@ def test_recurrent_operator_is_sequential_and_conservative_at_initialization(tmp
     )
 
 
-@pytest.mark.parametrize("mode", ["persistence", "learned"])
+@pytest.mark.parametrize("mode", ["persistence", "learned", "latent"])
 def test_history_only_recurrent_does_not_read_future_weather(tmp_path, mode):
     city = tmp_path / "city.txt"
     city.write_text("0 a 100 30\n1 b 101 31\n2 c 102 32\n")
@@ -144,6 +147,39 @@ def test_history_only_recurrent_does_not_read_future_weather(tmp_path, mode):
     assert torch.allclose(first["prediction"], second["prediction"])
     if mode == "learned":
         assert torch.allclose(first["weather_prediction"], second["weather_prediction"])
+    if mode == "latent":
+        assert "weather_prediction" not in first
+        assert model.use_lagged_transport is False
+
+
+def test_gagnn_overlap_audit_and_split_local_96x24_reconstruction(tmp_path):
+    samples, stations, features = 92, 209, 8
+    timeline = np.arange(
+        (samples + 23) * stations * features, dtype=np.float32
+    ).reshape(samples + 23, stations, features)
+    target_timeline = np.arange(
+        (samples + 29) * stations, dtype=np.float32
+    ).reshape(samples + 29, stations)
+    timeline[..., 7] = target_timeline[:samples + 23]
+    x = np.stack([timeline[i:i + 24] for i in range(samples)])
+    y = np.stack([target_timeline[i + 24:i + 30] for i in range(samples)])
+    for split in ("train", "val", "test"):
+        np.save(tmp_path / f"{split}_x.npy", x)
+        np.save(tmp_path / f"{split}_y.npy", y)
+    report = audit_gagnn_overlap(tmp_path)
+    assert report["reconstructable"] is True
+    assert report["train"]["windows_96_to_24"] == 2
+
+    metadata = type("Metadata", (), {
+        "protocol": "96x24", "mean": np.zeros(8), "std": np.ones(8)
+    })()
+    dataset = GAGNNAirDDEWindowDataset(tmp_path, "train", metadata)
+    first = dataset[0]
+    assert len(dataset) == 2
+    assert first["x"].shape == (96, 209, 8)
+    assert first["y"].shape == (24, 209)
+    np.testing.assert_array_equal(first["x"].numpy()[..., 0], target_timeline[:96])
+    np.testing.assert_array_equal(first["y"].numpy(), target_timeline[96:120])
 
 
 def test_external_panel_contract_and_operator_port(tmp_path):

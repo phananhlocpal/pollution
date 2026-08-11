@@ -153,8 +153,15 @@ GAGNN_WEATHER_COLUMNS = (3, 1, 2, 4, 5, 6, 0)
 
 
 @lru_cache(maxsize=2)
-def load_gagnn_metadata(directory: str | Path):
-    """Fit train-only scaling for the official pre-windowed GAGNN release."""
+def load_gagnn_metadata(directory: str | Path, protocol: str = "24x6"):
+    """Fit train-only scaling for the official GAGNN release.
+
+    ``protocol="96x24"`` fits the scale on the unique, reconstructed training
+    timeline rather than counting the heavily overlapping 24-step windows
+    repeatedly.  Reconstruction never joins different release splits.
+    """
+    if protocol not in {"24x6", "96x24"}:
+        raise ValueError("GAGNN protocol must be 24x6 or 96x24")
     directory = Path(directory).resolve()
     train_x = np.load(directory / "train_x.npy", mmap_mode="r")
     train_y = np.load(directory / "train_y.npy", mmap_mode="r")
@@ -167,10 +174,23 @@ def load_gagnn_metadata(directory: str | Path):
     total = np.zeros(8, dtype=np.float64)
     square = np.zeros(8, dtype=np.float64)
     count = 0
-    for left in range(0, len(train_x), 128):
-        chunk = np.asarray(train_x[left:left + 128, ..., order], dtype=np.float64)
-        total += chunk.sum(axis=(0, 1, 2))
-        square += np.square(chunk).sum(axis=(0, 1, 2))
+    if protocol == "24x6":
+        chunks = (
+            np.asarray(train_x[left:left + 128, ..., order], dtype=np.float64)
+            for left in range(0, len(train_x), 128)
+        )
+    else:
+        # One leading frame per released window plus the final 23-frame tail
+        # is the exact continuous feature timeline implied by unit-stride
+        # overlap.  The caller is expected to run the overlap audit first.
+        def unique_chunks():
+            for left in range(0, len(train_x), 512):
+                yield np.asarray(train_x[left:left + 512, 0][..., order], dtype=np.float64)
+            yield np.asarray(train_x[-1, 1:][..., order], dtype=np.float64)
+        chunks = unique_chunks()
+    for chunk in chunks:
+        total += chunk.sum(axis=tuple(range(chunk.ndim - 1)))
+        square += np.square(chunk).sum(axis=tuple(range(chunk.ndim - 1)))
         count += np.prod(chunk.shape[:-1])
     mean = total / count
     std = np.sqrt(np.maximum(square / count - np.square(mean), 0))
@@ -179,7 +199,10 @@ def load_gagnn_metadata(directory: str | Path):
     return SimpleNamespace(
         mean=mean, std=std, stations=[str(i) for i in range(209)],
         coordinates=coordinates, weather_dim=7, target_threshold=np.zeros(209),
-        source="official_gagnn_pre_windowed", history=24, horizon=6, cadence_hours=1,
+        source="official_gagnn_reconstructed" if protocol == "96x24" else "official_gagnn_pre_windowed",
+        history=96 if protocol == "96x24" else 24,
+        horizon=24 if protocol == "96x24" else 6,
+        protocol=protocol, cadence_hours=1,
     )
 
 
@@ -214,6 +237,100 @@ class GAGNNWindowDataset(Dataset):
             "future_weather": torch.from_numpy(future_weather),
             "y": torch.from_numpy(target),
             "forecast_start": torch.tensor(source + 24, dtype=torch.long),
+        }
+
+
+def audit_gagnn_overlap(directory: str | Path) -> dict:
+    """Verify exact unit-stride continuity independently inside each split."""
+    directory = Path(directory)
+    report = {}
+    for split in ("train", "val", "test"):
+        x = np.load(directory / f"{split}_x.npy", mmap_mode="r")
+        y = np.load(directory / f"{split}_y.npy", mmap_mode="r")
+        x_exact = True
+        for left in range(0, len(x) - 1, 32):
+            right = min(len(x) - 1, left + 32)
+            if not np.array_equal(x[left:right, 1:], x[left + 1:right + 1, :-1]):
+                x_exact = False
+                break
+        y_exact = True
+        for left in range(0, len(y) - 1, 256):
+            right = min(len(y) - 1, left + 256)
+            if not np.array_equal(y[left:right, 1:], y[left + 1:right + 1, :-1]):
+                y_exact = False
+                break
+        target_exact = True
+        for left in range(0, max(0, len(x) - 24), 256):
+            right = min(len(x) - 24, left + 256)
+            if not np.array_equal(x[left + 24:right + 24, 0, :, 7], y[left:right, 0]):
+                target_exact = False
+                break
+        report[split] = {
+            "x_shape": list(x.shape),
+            "y_shape": list(y.shape),
+            "adjacent_x_overlap_exact": x_exact,
+            "adjacent_y_overlap_exact": y_exact,
+            "y0_matches_x_plus_24_target": target_exact,
+            "windows_96_to_24": max(0, len(x) - 90),
+        }
+    report["reconstructable"] = all(
+        row["adjacent_x_overlap_exact"]
+        and row["adjacent_y_overlap_exact"]
+        and row["y0_matches_x_plus_24_target"]
+        for row in report.values()
+    )
+    return report
+
+
+class GAGNNAirDDEWindowDataset(Dataset):
+    """Reconstruct split-local 96h->24h windows from the GAGNN release.
+
+    Four non-overlapping released ``x`` windows form the 96-hour history.
+    Four non-overlapping released ``y`` windows, offset by 72 samples, form
+    the following 24 target hours.  No samples cross a train/val/test boundary
+    and no realized future meteorology is exposed.
+    """
+
+    def __init__(self, directory, split, metadata, max_samples=None):
+        if split not in {"train", "val", "test"}:
+            raise ValueError("split must be train, val, or test")
+        if getattr(metadata, "protocol", None) != "96x24":
+            raise ValueError("96x24 dataset requires matching reconstructed metadata")
+        directory = Path(directory)
+        self.x = np.load(directory / f"{split}_x.npy", mmap_mode="r")
+        self.y = np.load(directory / f"{split}_y.npy", mmap_mode="r")
+        count = len(self.x) - 90
+        if count <= 0:
+            raise ValueError(f"Split {split} is too short for reconstructed 96x24 windows")
+        self.indices = np.arange(count, dtype=np.int64)
+        if max_samples is not None and count > max_samples:
+            self.indices = self.indices[np.linspace(0, count - 1, max_samples, dtype=int)]
+        self.metadata = metadata
+
+    def __len__(self):
+        return len(self.indices)
+
+    def __getitem__(self, index):
+        source = int(self.indices[index])
+        raw_history = np.concatenate(
+            tuple(np.asarray(self.x[source + offset]) for offset in (0, 24, 48, 72)),
+            axis=0,
+        )
+        physical = np.concatenate(
+            (raw_history[..., 7:8], raw_history[..., GAGNN_WEATHER_COLUMNS]), axis=-1
+        )
+        history = ((physical - self.metadata.mean) / self.metadata.std).astype(np.float32)
+        raw_target = np.concatenate(
+            tuple(np.asarray(self.y[source + offset]) for offset in (72, 78, 84, 90)),
+            axis=0,
+        )
+        target = ((raw_target - self.metadata.mean[0]) / self.metadata.std[0]).astype(np.float32)
+        return {
+            "x": torch.from_numpy(history),
+            # Contract placeholder: latent mode provably ignores this tensor.
+            "future_weather": torch.zeros((24, 209, 7), dtype=torch.float32),
+            "y": torch.from_numpy(target),
+            "forecast_start": torch.tensor(source + 96, dtype=torch.long),
         }
 
 
