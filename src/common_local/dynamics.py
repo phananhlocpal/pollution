@@ -44,6 +44,12 @@ class TransportSourceRecurrentForecaster(nn.Module):
         future_weather_mode: str = "observed",
         weather_hidden_dim: int = 16,
         weather_loss_weight: float = 0.1,
+        weather_increment_loss_weight: float = 0.0,
+        seasonal_period: int = 8,
+        seasonal_weights=None,
+        transport_forcing_dim: int = 16,
+        source_forcing_dim: int = 32,
+        horizon_embedding_dim: int = 8,
         coordinates=None,
     ):
         super().__init__()
@@ -55,14 +61,31 @@ class TransportSourceRecurrentForecaster(nn.Module):
         self.use_lagged_transport = use_lagged_transport
         self.use_auxiliary = use_auxiliary
         self.use_month = use_month
-        if future_weather_mode not in {"observed", "persistence", "learned", "latent"}:
+        if future_weather_mode not in {
+            "observed", "persistence", "learned", "latent",
+            "seasonal", "seasonal_weighted", "factorized",
+        }:
             raise ValueError(f"Unknown future weather mode: {future_weather_mode}")
         self.future_weather_mode = future_weather_mode
         self.latent_forcing = future_weather_mode == "latent"
-        # V2 deliberately removes the explicit previous-state transport path.
-        if self.latent_forcing:
+        self.factorized_forcing = future_weather_mode == "factorized"
+        # History-only V2/V3 deliberately remove the explicit lag pathway.
+        if self.latent_forcing or self.factorized_forcing:
             self.use_lagged_transport = False
         self.weather_loss_weight = weather_loss_weight
+        self.weather_increment_loss_weight = weather_increment_loss_weight
+        self.seasonal_period = seasonal_period
+        if future_weather_mode == "seasonal_weighted":
+            if seasonal_weights is None:
+                raise ValueError("seasonal_weighted mode requires train-fitted weights")
+            weight_tensor = torch.as_tensor(seasonal_weights, dtype=torch.float32)
+            if weight_tensor.ndim != 2 or weight_tensor.shape[0] != weather_dim:
+                raise ValueError("seasonal_weights must have shape [weather_dim, cycles]")
+            if torch.any(weight_tensor < 0) or not torch.allclose(
+                weight_tensor.sum(-1), torch.ones(weather_dim), atol=1e-5
+            ):
+                raise ValueError("seasonal weights must be non-negative and sum to one")
+            self.register_buffer("seasonal_weights", weight_tensor)
         self.common_encoder = nn.GRU(1 + weather_dim + 1, hidden_dim, batch_first=True)
         self.local_encoder = nn.GRU(3 + weather_dim * 3, hidden_dim, batch_first=True)
         if future_weather_mode == "learned":
@@ -83,13 +106,44 @@ class TransportSourceRecurrentForecaster(nn.Module):
                 1 + weather_hidden_dim, weather_hidden_dim
             )
             self.latent_transport_signal = nn.Linear(weather_hidden_dim, 1)
+        if self.factorized_forcing:
+            self.multiscale_lags = (1, 2, 4, 8, 16, 24)
+            multiscale_dim = weather_dim * len(self.multiscale_lags)
+            self.transport_forcing_encoder = nn.Sequential(
+                nn.Linear(multiscale_dim, transport_forcing_dim * 2), nn.GELU(),
+                nn.Linear(transport_forcing_dim * 2, transport_forcing_dim),
+            )
+            self.source_forcing_encoder = nn.Sequential(
+                nn.Linear(multiscale_dim, source_forcing_dim * 2), nn.GELU(),
+                nn.Linear(source_forcing_dim * 2, source_forcing_dim),
+            )
+            self.horizon_embedding = nn.Embedding(horizon, horizon_embedding_dim)
+            self.transport_forcing_cell = nn.GRUCell(
+                horizon_embedding_dim, transport_forcing_dim
+            )
+            self.source_forcing_cell = nn.GRUCell(
+                horizon_embedding_dim, source_forcing_dim
+            )
+            source_weather_dim = weather_dim - 3 if weather_dim >= 6 else weather_dim
+            self.source_weather_head = nn.Linear(source_forcing_dim, source_weather_dim)
+            self.transport_weather_head = (
+                nn.Linear(transport_forcing_dim, 3) if weather_dim >= 6 else None
+            )
+            nn.init.zeros_(self.source_weather_head.weight)
+            nn.init.zeros_(self.source_weather_head.bias)
+            if self.transport_weather_head is not None:
+                nn.init.zeros_(self.transport_weather_head.weight)
+                nn.init.zeros_(self.transport_weather_head.bias)
         self.station_embedding = nn.Embedding(stations, station_dim)
         self.month_embedding = nn.Embedding(12, month_dim)
 
-        forcing_dim = weather_hidden_dim if self.latent_forcing else weather_dim
+        forcing_dim = (
+            source_forcing_dim if self.factorized_forcing else
+            weather_hidden_dim if self.latent_forcing else weather_dim
+        )
         common_future_dim = 1 + forcing_dim + auxiliary_dim + month_dim
         local_feature_dim = 1 + forcing_dim + auxiliary_dim + month_dim + station_dim
-        operator_terms = 1 if self.latent_forcing else 2
+        operator_terms = 1 if (self.latent_forcing or self.factorized_forcing) else 2
         local_future_dim = local_feature_dim + operator_terms
         self.common_cell = nn.GRUCell(common_future_dim, hidden_dim)
         self.local_cell = nn.GRUCell(local_future_dim, hidden_dim)
@@ -175,11 +229,54 @@ class TransportSourceRecurrentForecaster(nn.Module):
             local_hidden[-1].reshape(batch_size, stations, -1),
         )
 
+    def _initial_factorized_forcing(self, weather: torch.Tensor):
+        """Encode fixed multi-scale meteorology without consulting PM state."""
+        if weather.shape[1] < max(self.multiscale_lags):
+            raise ValueError("Weather history is shorter than V3 multi-scale lags")
+        selected = torch.stack(
+            [weather[:, -lag] for lag in self.multiscale_lags], dim=2
+        ).flatten(2)
+        return (
+            self.transport_forcing_encoder(selected),
+            self.source_forcing_encoder(selected),
+        )
+
+    def _factorized_weather_step(
+        self, previous: torch.Tensor, transport_forcing: torch.Tensor,
+        source_forcing: torch.Tensor,
+    ) -> torch.Tensor:
+        """Decode auxiliary meteorology with wind owned by transport state."""
+        source_delta = self.source_weather_head(source_forcing)
+        if self.transport_weather_head is None:
+            return previous + source_delta
+        transport_delta = self.transport_weather_head(transport_forcing)
+        delta = torch.cat(
+            (source_delta[..., :3], transport_delta, source_delta[..., 3:]), -1
+        )
+        return previous + delta
+
     def _causal_future_weather(self, weather: torch.Tensor) -> torch.Tensor:
         if self.future_weather_mode == "observed":
             raise RuntimeError("Observed future weather is supplied directly")
         if self.future_weather_mode == "persistence":
             return weather[:, -1:, :, :].expand(-1, self.horizon, -1, -1)
+        if self.future_weather_mode in {"seasonal", "seasonal_weighted"}:
+            period = self.seasonal_period
+            if weather.shape[1] < period:
+                raise ValueError("Weather history is shorter than seasonal period")
+            if self.future_weather_mode == "seasonal":
+                template = weather[:, -period:]
+            else:
+                cycles = self.seasonal_weights.shape[1]
+                if weather.shape[1] < period * cycles:
+                    raise ValueError("Weather history is shorter than weighted seasonal cycles")
+                histories = torch.stack([
+                    weather[:, -(lag + 1) * period:-lag * period if lag else None]
+                    for lag in range(cycles)
+                ], dim=-1)
+                template = (histories * self.seasonal_weights[None, None, None]).sum(-1)
+            repeats = (self.horizon + period - 1) // period
+            return template.repeat(1, repeats, 1, 1)[:, :self.horizon]
         batch_size, history, stations, weather_dim = weather.shape
         flattened = weather.permute(0, 2, 1, 3).reshape(
             batch_size * stations, history, weather_dim
@@ -204,10 +301,22 @@ class TransportSourceRecurrentForecaster(nn.Module):
         else:
             auxiliary = x.new_zeros(batch_size, self.horizon, stations, 3)
         pm, weather = x[..., :1], x[..., 1:]
-        if self.future_weather_mode in {"persistence", "learned"}:
+        causal_weather_prediction = None
+        if self.future_weather_mode in {
+            "persistence", "learned", "seasonal", "seasonal_weighted"
+        }:
             future_weather = self._causal_future_weather(weather)
+        if self.future_weather_mode == "learned":
+            causal_weather_prediction = future_weather
+            if "diagnostic_future_weather_override" in batch:
+                if self.training:
+                    raise RuntimeError("Oracle weather override is evaluation-only")
+                future_weather = batch["diagnostic_future_weather_override"]
         if self.latent_forcing:
             global_forcing, local_forcing = self._initial_latent_forcing(weather)
+        if self.factorized_forcing:
+            transport_forcing, source_forcing = self._initial_factorized_forcing(weather)
+            previous_weather = weather[:, -1]
         common_pm = pm.mean(2)
         residual_pm = pm - common_pm[:, :, None]
         common_input = torch.cat((
@@ -227,6 +336,7 @@ class TransportSourceRecurrentForecaster(nn.Module):
         station = station[None].expand(batch_size, -1, -1)
         state_history = [pm[:, -2, :, 0], pm[:, -1, :, 0]]
         predictions, transports, sources, gates = [], [], [], []
+        factorized_weather_predictions = []
         for step in range(self.horizon):
             state = state_history[-1]
             if self.latent_forcing:
@@ -242,6 +352,26 @@ class TransportSourceRecurrentForecaster(nn.Module):
                 ).reshape(batch_size, stations, -1)
                 common_forcing_step = global_forcing
                 local_forcing_step = local_forcing
+            elif self.factorized_forcing:
+                horizon_step = self.horizon_embedding.weight[step]
+                horizon_nodes = horizon_step[None, None].expand(
+                    batch_size, stations, -1
+                )
+                transport_forcing = self.transport_forcing_cell(
+                    horizon_nodes.reshape(batch_size * stations, -1),
+                    transport_forcing.reshape(batch_size * stations, -1),
+                ).reshape(batch_size, stations, -1)
+                source_forcing = self.source_forcing_cell(
+                    horizon_nodes.reshape(batch_size * stations, -1),
+                    source_forcing.reshape(batch_size * stations, -1),
+                ).reshape(batch_size, stations, -1)
+                previous_weather = self._factorized_weather_step(
+                    previous_weather, transport_forcing, source_forcing
+                )
+                factorized_weather_predictions.append(previous_weather)
+                weather_step = previous_weather
+                common_forcing_step = source_forcing.mean(1)
+                local_forcing_step = source_forcing
             else:
                 weather_step = future_weather[:, step]
                 common_forcing_step = weather_step.mean(1)
@@ -262,6 +392,12 @@ class TransportSourceRecurrentForecaster(nn.Module):
                 innovation_now = self._spatial_innovation(state)
                 innovation_lag = torch.zeros_like(innovation_now)
                 transport_context = self.latent_transport_signal(local_forcing_step)
+            elif self.factorized_forcing:
+                innovation_now = self._wind_innovation(
+                    state, weather_step[..., 4], weather_step[..., 5]
+                )
+                innovation_lag = torch.zeros_like(innovation_now)
+                transport_context = weather_step[..., 3:4]
             else:
                 innovation_now = self._wind_innovation(
                     state, weather_step[..., 4], weather_step[..., 5]
@@ -280,7 +416,7 @@ class TransportSourceRecurrentForecaster(nn.Module):
                 residual_state[..., None], local_forcing_step, auxiliary_step,
                 month_nodes, station,
             ), -1)
-            if self.latent_forcing:
+            if self.latent_forcing or self.factorized_forcing:
                 local_recurrent = torch.cat((
                     local_features, innovation_now[..., None],
                 ), -1)
@@ -293,7 +429,7 @@ class TransportSourceRecurrentForecaster(nn.Module):
                 local_hidden.reshape(batch_size * stations, -1),
             ).reshape(batch_size, stations, -1)
 
-            if self.latent_forcing:
+            if self.latent_forcing or self.factorized_forcing:
                 transport_input = torch.cat((
                     local_hidden, innovation_now[..., None], transport_context,
                 ), -1)
@@ -351,7 +487,11 @@ class TransportSourceRecurrentForecaster(nn.Module):
             "source_operator": torch.stack(sources, 1),
         }
         if self.future_weather_mode == "learned":
-            result["weather_prediction"] = future_weather
+            result["weather_prediction"] = causal_weather_prediction
+        if self.factorized_forcing:
+            result["weather_prediction"] = torch.stack(
+                factorized_weather_predictions, 1
+            )
         if gates:
             result["event_gate"] = torch.stack(gates, 1)
         return result

@@ -100,6 +100,56 @@ def load_panel(root: str | Path = ".") -> Panel:
     )
 
 
+def _project_simplex(values: np.ndarray) -> np.ndarray:
+    """Project a short vector onto the non-negative unit simplex."""
+    ordered = np.sort(values)[::-1]
+    cumulative = np.cumsum(ordered) - 1.0
+    support = np.nonzero(ordered - cumulative / np.arange(1, len(values) + 1) > 0)[0]
+    threshold = cumulative[support[-1]] / (support[-1] + 1)
+    return np.maximum(values - threshold, 0.0)
+
+
+def fit_seasonal_weather_weights(
+    panel: Panel, period: int = 8, cycles: int = 3
+) -> np.ndarray:
+    """Fit feature-group convex seasonal weights on the training split only.
+
+    Wind direction sine/cosine channels share one set of weights so their vector
+    geometry is preserved. The returned array is ``[weather_dim, cycles]``.
+    """
+    train_end = panel.split_points[0]
+    weather = np.asarray(panel.values[:train_end, :, 1:], dtype=np.float64)
+    if len(weather) <= period * cycles:
+        raise ValueError("Training split is too short for requested seasonal cycles")
+    weather_dim = weather.shape[-1]
+    groups = [(index,) for index in range(min(4, weather_dim))]
+    if weather_dim >= 6:
+        groups.append((4, 5))
+        groups.extend((index,) for index in range(6, weather_dim))
+    else:
+        groups.extend((index,) for index in range(4, weather_dim))
+    weights = np.zeros((weather_dim, cycles), dtype=np.float64)
+    start = period * cycles
+    for group in groups:
+        selected = weather[..., list(group)]
+        target = selected[start:].reshape(-1)
+        predictors = np.stack([
+            selected[start - lag * period:train_end - lag * period]
+            for lag in range(1, cycles + 1)
+        ], axis=-1).reshape(-1, cycles)
+        gram = predictors.T @ predictors / len(target)
+        cross = predictors.T @ target / len(target)
+        value = np.full(cycles, 1.0 / cycles)
+        lipschitz = max(2.0 * np.linalg.eigvalsh(gram).max(), 1e-8)
+        for _ in range(500):
+            updated = _project_simplex(value - 2.0 * (gram @ value - cross) / lipschitz)
+            if np.max(np.abs(updated - value)) < 1e-12:
+                break
+            value = updated
+        weights[list(group)] = value
+    return weights.astype(np.float32)
+
+
 def load_standard_panel(path: str | Path, expected_stations: int | None = None) -> Panel:
     """Load an external lockbox from the documented, dataset-neutral NPZ contract.
 

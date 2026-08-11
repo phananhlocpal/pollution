@@ -55,6 +55,22 @@ def _run_epoch(model, loader, panel, device, optimizer=None, loss_kind="l1"):
                     output["weather_prediction"], batch["future_weather_target"], beta=.5
                 )
                 loss = loss + model.weather_loss_weight * weather_loss
+                if getattr(model, "weather_increment_loss_weight", 0.0) > 0:
+                    previous = batch["x"][:, -1, :, 1:]
+                    predicted_increment = torch.cat((
+                        output["weather_prediction"][:, :1] - previous[:, None],
+                        output["weather_prediction"][:, 1:]
+                        - output["weather_prediction"][:, :-1],
+                    ), 1)
+                    target_increment = torch.cat((
+                        batch["future_weather_target"][:, :1] - previous[:, None],
+                        batch["future_weather_target"][:, 1:]
+                        - batch["future_weather_target"][:, :-1],
+                    ), 1)
+                    increment_loss = torch.nn.functional.smooth_l1_loss(
+                        predicted_increment, target_increment, beta=.5
+                    )
+                    loss = loss + model.weather_increment_loss_weight * increment_loss
             if training:
                 optimizer.zero_grad(set_to_none=True); loss.backward()
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)

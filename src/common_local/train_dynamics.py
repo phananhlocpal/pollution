@@ -12,7 +12,7 @@ import torch
 
 from .data import (
     CommonLocalWindowDataset, GAGNNAirDDEWindowDataset, GAGNNWindowDataset,
-    audit_gagnn_overlap, load_gagnn_metadata,
+    audit_gagnn_overlap, fit_seasonal_weather_weights, load_gagnn_metadata,
     load_panel, load_standard_panel,
 )
 from .dynamics import TransportSourceRecurrentForecaster
@@ -25,8 +25,10 @@ def run_seed(args, seed):
     if args.gagnn_dir:
         if args.future_weather_mode == "observed":
             raise ValueError("GAGNN provides historical covariates only; choose persistence, learned, or latent")
-        if args.gagnn_protocol == "96x24" and args.future_weather_mode != "latent":
-            raise ValueError("Corrected GAGNN 96x24 runs require history-only latent forcing")
+        if args.gagnn_protocol == "96x24" and args.future_weather_mode not in {
+            "latent", "factorized"
+        }:
+            raise ValueError("Corrected GAGNN 96x24 runs require history-only forcing")
         if args.gagnn_protocol == "96x24":
             audit = audit_gagnn_overlap(root / args.gagnn_dir)
             if not audit["reconstructable"]:
@@ -70,8 +72,19 @@ def run_seed(args, seed):
         "future_weather_mode": args.future_weather_mode,
         "weather_hidden_dim": args.weather_hidden_dim,
         "weather_loss_weight": args.weather_loss_weight,
+        "weather_increment_loss_weight": args.weather_increment_loss_weight,
+        "transport_forcing_dim": args.transport_forcing_dim,
+        "source_forcing_dim": args.source_forcing_dim,
+        "horizon_embedding_dim": args.horizon_embedding_dim,
+        "seasonal_period": args.seasonal_period,
         "horizon": horizon,
     }
+    if args.future_weather_mode == "seasonal_weighted":
+        if args.gagnn_dir:
+            raise ValueError("Train-fitted weighted seasonal forcing is currently KnowAir-only")
+        config["seasonal_weights"] = fit_seasonal_weather_weights(
+            panel, args.seasonal_period, args.seasonal_cycles
+        ).tolist()
     config["weather_dim"] = panel.weather_dim if args.gagnn_dir else panel.values.shape[-1] - 1
     model = TransportSourceRecurrentForecaster(
         root / "data/benchmarks/knowair/city.txt" if not (args.panel_npz or args.gagnn_dir) else None,
@@ -103,6 +116,10 @@ def run_seed(args, seed):
         f"parameters={parameters:,} train={len(train_set)} val={len(val_set)}"
     )
     overall_key = f"overall_1_{horizon * getattr(panel, 'cadence_hours', 3)}h"
+    architecture = {
+        "latent": "latent_forcing_transport_source_recurrent_v2",
+        "factorized": "factorized_exogenous_transport_source_v3",
+    }.get(args.future_weather_mode, "transport_source_recurrent")
     for epoch in range(1, args.epochs + 1):
         train = _run_epoch(model, train_loader, panel, device, optimizer)
         validation = _run_epoch(model, val_loader, panel, device)
@@ -119,11 +136,7 @@ def run_seed(args, seed):
             best, best_epoch, stale = mae, epoch, 0
             torch.save({
                 "model_state": model.state_dict(),
-                "architecture": (
-                    "latent_forcing_transport_source_recurrent_v2"
-                    if args.future_weather_mode == "latent"
-                    else "transport_source_recurrent"
-                ),
+                "architecture": architecture,
                 "config": config,
             }, checkpoint)
         else:
@@ -133,10 +146,7 @@ def run_seed(args, seed):
     model.load_state_dict(torch.load(checkpoint, map_location=device, weights_only=False)["model_state"])
     validation = _run_epoch(model, val_loader, panel, device)
     payload = {
-        "model": (
-            "latent_forcing_transport_source_recurrent_v2"
-            if args.future_weather_mode == "latent" else "transport_source_recurrent"
-        ), "seed": seed,
+        "model": architecture, "seed": seed,
         "config": config, "parameter_count": parameters,
         "best_epoch": best_epoch, "best_validation_mae": best,
         "validation": validation, "history": history,
@@ -176,10 +186,21 @@ def main():
     parser.add_argument("--disable-lagged-transport", action="store_true")
     parser.add_argument("--disable-auxiliary", action="store_true")
     parser.add_argument("--disable-month", action="store_true")
-    parser.add_argument("--future-weather-mode", choices=("observed", "persistence", "learned", "latent"),
+    parser.add_argument(
+        "--future-weather-mode",
+        choices=(
+            "observed", "persistence", "learned", "latent", "seasonal",
+            "seasonal_weighted", "factorized",
+        ),
                         default="observed")
     parser.add_argument("--weather-hidden-dim", type=int, default=16)
     parser.add_argument("--weather-loss-weight", type=float, default=.1)
+    parser.add_argument("--weather-increment-loss-weight", type=float, default=0.0)
+    parser.add_argument("--transport-forcing-dim", type=int, default=16)
+    parser.add_argument("--source-forcing-dim", type=int, default=32)
+    parser.add_argument("--horizon-embedding-dim", type=int, default=8)
+    parser.add_argument("--seasonal-period", type=int, default=8)
+    parser.add_argument("--seasonal-cycles", type=int, default=3)
     parser.add_argument("--device", default="auto")
     parser.add_argument("--max-train-samples", type=int)
     parser.add_argument("--max-eval-samples", type=int)

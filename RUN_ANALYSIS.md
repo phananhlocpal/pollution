@@ -138,20 +138,50 @@ available with `--paper-style`; it is not labelled an exact paper reproduction.
 
 ## 6. Fairness and mechanism follow-up
 
-History-only core-meteorology runs never read the realized future-weather tensor:
+History-only core-meteorology runs never read the realized future-weather tensor.
+Persistence and the learned causal-weather GRU obtained validation MAE 20.7945 and
+20.7071, respectively, and were rejected without opening KnowAir test predictions:
 
 ```powershell
 .\.venv\Scripts\python.exe -m common_local.train_dynamics --seeds 43 --epochs 30 --patience 6 --batch-size 256 --disable-auxiliary --disable-month --future-weather-mode persistence --output-dir artifacts\transport_source_recurrent_history_persistence --device cuda
 .\.venv\Scripts\python.exe -m common_local.train_dynamics --seeds 43 --epochs 30 --patience 6 --batch-size 256 --disable-auxiliary --disable-month --future-weather-mode learned --weather-hidden-dim 16 --weather-loss-weight 0.1 --output-dir artifacts\transport_source_recurrent_history_learned --device cuda
 ```
 
-They obtained validation MAE 20.7945 and 20.7071, respectively, and were rejected
-without opening their KnowAir test predictions.
+Diagnose the frozen causal weather forecast on KnowAir validation only, including
+feature-by-horizon skill and channel-wise oracle sensitivity:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\diagnose_weather_forcing.py
+```
+
+Screen the 24h-repeat and train-fitted three-day convex seasonal forcings. This
+command keeps all tests sealed, selects on seed-43 validation, and proceeds to
+three seeds only if the best validation MAE is at most 18.0:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\run_seasonal_forcing.py
+```
+
+The seasonal and weighted-seasonal seed-43 MAEs were 20.8958 and 20.8114. Both
+failed the <=18 gate, so their three-seed and test stages did not run.
 
 The factorized history-only latent-forcing V2 was subsequently run for all three
 seeds. It obtained `20.6533 / 20.8487 / 20.8613` validation MAE (mean
 `20.7878 +/- 0.0952`) and failed the predeclared `<=18.0` gate. Its KnowAir test
 and the corrected China-AQI 96-to-24 test both remain unopened.
+
+After the seasonal screen fails the validation gate, screen Factorized Exogenous
+V3. The wrapper compares PM-only and meteorological system-identification objectives
+on seed 43, selects on validation, and launches seeds 42/43/44 only after MAE <=18:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\run_factorized_v3.py
+```
+
+The screen obtained 20.6024 MAE for PM-only V3 and 20.5693 with system
+identification. It failed the <=18 gate, so the wrapper did not launch three seeds
+or access either test. `artifacts/factorized_v3/decision.json` records the rejected
+branch and the decision not to continue deterministic architecture escalation.
 
 The independently retrained validation ablation matrix (three seeds per variant)
 is launched by:

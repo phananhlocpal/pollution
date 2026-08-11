@@ -20,7 +20,6 @@ weather, so exact input-information parity with the AirDDE manuscript is unverif
 | recurrent convex prediction ensemble | 3 | 3 x 72,659 | **14.3329** | **16.7215** | **17.3164** | **16.1236** |
 | core-meteo future-forcing recurrent | 3 | 72,659 | 14.9403 | 17.4357 | 17.9244 | **16.7668 ± 0.0238** |
 | core-meteo future-forcing convex ensemble | 3 | 3 x 72,659 | 14.7156 | 17.1010 | 17.5609 | **16.4592** |
-| AirDDE release reproduction | 1 | 360,182 | 14.3537 | 16.6266 | 17.2421 | 16.0741 |
 
 The recurrent operator improves the three-seed mean over static wind+meteo by
 1.9754 MAE. The improvement grows with horizon: 1.0332 on Day 1, 2.2146 on Day 2,
@@ -29,12 +28,8 @@ future state evolution, rather than another static feature correction, was the
 dominant failure mode.
 
 The validation-fitted convex recurrent ensemble has weights
-`[0.2382, 0.3649, 0.3969]`. Against the one-seed AirDDE release validation bundle,
-its paired delta is +0.0491 MAE with moving-block CI95% `[-0.1276, 0.2536]`.
-The interval remains crossing zero at block lengths 48 (`[-0.1465, 0.3016]`)
-and 96 (`[-0.1909, 0.3295]`).
-This is not a strict feature-parity or multi-seed AirDDE claim, but the two results
-are not distinguishable under the current conditional block bootstrap.
+`[0.2382, 0.3649, 0.3969]`. It is retained as an internal validation result, not
+as a comparison against reruns of released AirDDE code.
 
 ## Cheap experiments and rejected branches
 
@@ -84,12 +79,23 @@ On the RTX 5060 Ti, batch 8, 10 warmups and 100 timed forwards:
 | common_local | 27,730 | 0.185 | 0.221 |
 | separated transport/source correction | 28,212 | 0.265 | 0.296 |
 | Transport--Source Recurrent Operator | 72,659 | 4.025 | 6.781 |
-| AirDDE release | 360,182 | 98.230 | 119.204 |
 
-The recurrent operator is about 24.4x faster by median forward latency and uses
-about 5x fewer parameters than AirDDE release. It gives up the sub-millisecond
-latency of direct heads, but retains a large efficiency advantage over the neural
-differential-equation implementation.
+The recurrent operator gives up the sub-millisecond latency of direct heads in
+exchange for substantially better long-horizon validation accuracy. No efficiency
+claim against a locally rerun AirDDE release is included in this paper-facing report.
+
+## Published AirDDE reference scalars
+
+Only the values printed in the paper are used as AirDDE references in this report;
+no locally reproduced release number is treated as an AirDDE result.
+
+| Dataset | MAE | RMSE | MAPE/sMAPE as published |
+| --- | ---: | ---: | ---: |
+| KnowAir | 16.92 | 27.78 | 0.38 |
+| China-AQI | 17.03 | 29.91 | 30.82 |
+
+The China-AQI row is reference context only until an information- and
+horizon-matched 96h-to-24h model passes the sealed validation gate.
 
 ## Frozen test confirmation against the paper
 
@@ -148,6 +154,51 @@ KnowAir validation MAEs were 20.6533 / 20.8487 / 20.8613 across seeds 42/43/44,
 for 20.7878 +/- 0.0952. It failed the predeclared <=18.0 selection gate and was
 rejected. Consequently, the corrected China-AQI 96h-to-24h test was not opened.
 
+### Weather-forcing diagnosis and seasonal candidate
+
+The seed-43 causal weather forecaster was diagnosed on KnowAir validation only.
+Pressure remains highly correlated through 72h (>0.993), while relative-humidity
+correlation falls from 0.934 at 3h to 0.493 at 72h and wind-speed correlation from
+0.832 to 0.252. Wind direction is the clearest degraded channel: mean absolute
+angular error rises from 24.7 degrees at 3h to 63.0 at 24h and 76.8 at 72h.
+
+Substituting validation truth one channel at a time into the frozen downstream
+network improves PM MAE only for relative humidity (+0.0103) and, materially, the
+wind-direction vector (+0.4338). Temperature, pressure, wind speed, and all-weather
+substitution worsen MAE. These oracle substitutions are sensitivity probes, not
+forecast results or an additive decomposition: the downstream network was trained
+on predicted-weather inputs, so replacing all channels creates distribution shift.
+Full feature-by-horizon values are in
+`artifacts/weather_diagnostics/learned_seed43_validation.json`; no test split was read.
+
+Two causal daily-cycle candidates are implemented next: repeat the final 24h
+(8 three-hour steps), and a nonnegative convex mixture of the final three daily
+cycles. Mixture weights are fitted on the training split only, with shared weights
+for the sine/cosine wind-direction pair. Both disable the unsupported explicit-lag
+branch and are guarded by a <=18.0 KnowAir validation gate before any three-seed or
+China-AQI work. The seed-43 screen obtained 20.8958 MAE for last-day repeat and
+20.8114 for the train-fitted three-day convex mixture. Both failed the gate, so no
+three-seed seasonal run or test evaluation occurred (`test_accessed: false`).
+
+This failure activates the predeclared V3 branch. Factorized Exogenous
+Transport--Source V3 uses six fixed meteorological lags (1/2/4/8/16/24), separate
+16-dimensional transport and 32-dimensional source/sink states, exogenous
+horizon-conditioned state transitions, and a decoded directional wind vector for
+wind-aligned graph transport. It has no explicit lagged-transport input. Its
+system-identification screen compares PM-only training against joint weather-level
+and weather-increment losses; KnowAir and corrected China-AQI tests remain sealed
+unless the best three-seed KnowAir validation MAE is <=18.0.
+
+The completed seed-43 V3 screen reached 20.6024 MAE with PM-only training and
+20.5693 with system identification, a gain of only 0.0331. Both runs selected epoch
+14 and then plateaued; the result is not explained by early termination. Relative
+to the earlier causal-weather GRU, V3 improves PM MAE by only 0.1377. It improves
+some long-horizon wind-speed skill, but wind-direction error remains essentially
+unchanged at 24.7 / 63.0 / 76.5 degrees for 3 / 24 / 72h. The V3 gate therefore
+failed. No three-seed V3 training or test evaluation ran, and deterministic
+architecture escalation is stopped rather than weakening the gate. The complete
+decision record is `artifacts/factorized_v3/decision.json`.
+
 ## Residuals before and after recurrence
 
 Across the three validation seeds, recurrence reduces horizon MAE increasingly from
@@ -179,13 +230,5 @@ because AirDDE uses 96h history and a 24h forecast. Exact overlap auditing now
 supports split-local 96h-to-24h reconstruction, and the corrected history-only
 latent-forcing V2 experiment is the only valid direct comparison path.
 `EXTERNAL_REPLICATION.md` records provenance, reconstruction, freeze gate and commands.
-
-## Optional fairness work
-
-AirDDE release still has only seed 2024. This does not block comparison with the
-published paper point estimates. The multi-seed wrapper and hierarchical
-seed/block comparison are implemented, but seeds 42/43/44 are a separate multi-hour
-fairness job. The approximate paper-style option is explicitly labelled as Huber/SmoothL1
-plus patience 10, not as an exact reconstruction of the paper's Bayesian HPO.
 
 Feature-track definitions are recorded in `artifacts/fairness/feature_tracks.json`.
