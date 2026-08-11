@@ -1,0 +1,55 @@
+{
+  "status": "canonical_common_local_model",
+  "date": "2026-08-09",
+  "model": "common_local",
+  "retention_decision": "user selected common_local as the only model retained after project cleanup",
+  "configuration": {
+    "dataset": "KnowAir",
+    "task": "72-hour history to 72-hour forecast at 3-hour cadence",
+    "stations": 184,
+    "features": [
+      "PM2.5", "2m_temperature", "surface_pressure", "relative_humidity_950",
+      "100m_wind_speed_kmh", "100m_wind_direction_sin",
+      "100m_wind_direction_cos"
+    ],
+    "split": "chronological 2:1:1; retained pipeline trains on train and selects on validation only",
+    "parameters": 27730,
+    "objective": "masked compound L1: total + 0.25 common + 0.25 residual + 0.10 increment"
+  },
+  "validation_mean_three_seeds": {
+    "Day1_MAE": 15.868711576577953,
+    "Day2_MAE": 19.51201874394988,
+    "Day3_MAE": 20.595502111660412,
+    "overall_MAE": 18.6587478870856,
+    "overall_RMSE": 29.694430791234257,
+    "overall_SMAPE": 0.3963659749407061,
+    "test_accessed": false
+  },
+  "artifacts": {
+    "summary": {
+      "path": "artifacts/common_local/summary.json",
+      "sha256": "da5594895396e87c21c0900ea0a7d0d0965ed283d792f77413d18a6f6c75e728"
+    },
+    "seed_42_checkpoint": {
+      "path": "artifacts/common_local/seed_42/best_model.pt",
+      "sha256": "6138a67896b38c8d4e7eb340f1b9fb2975b3b076a373745601d1e7eaf2df88b2"
+    },
+    "seed_43_checkpoint": {
+      "path": "artifacts/common_local/seed_43/best_model.pt",
+      "sha256": "95b6705e3bf8499c46c87a5a1ed7a2f04023d77b34eb099238da9ef38bc980ef"
+    },
+    "seed_44_checkpoint": {
+      "path": "artifacts/common_local/seed_44/best_model.pt",
+      "sha256": "8780dbc44c402b87db7c1a086904550018e63f8b33ff290e2a6e66d215e4b246"
+    }
+  },
+  "source_integrity": {
+    "data.py": "aea19cede99f6a32c6149147b482a098d3ec3f1f2f93f7536cd8e899cf716125",
+    "losses.py": "8541dcf94e1e223c68c2434c272f759ae45e7f6e3b5edf6ad7adef5cf2e96abd",
+    "metrics.py": "7ee2c8a5e3180ca3a27d8c706cff2b02d4aacd05a629d1e95388966f0470abb8",
+    "model.py": "23d160cae5a103d3dc451c3633429696ae50e549b32e09371a122a4879d41e62",
+    "train.py": "f2819f65a99cbba0cbb1f54271fb0054ad26cd1cdaf22acb9c51243a9b1429a5"
+  },
+  "removed_scope": "all graph, transport, mechanism-recovery, robustness, replication, correction-candidate, spatial-mode, predictive-subspace and temporal-innovation model stages",
+  "preserved_non_model_scope": "raw datasets, benchmark EDA notebooks, EDA outputs and data-download/reproduction scripts"
+}
