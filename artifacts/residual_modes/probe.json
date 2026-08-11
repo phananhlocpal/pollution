@@ -1,0 +1,22 @@
+{
+  "bundle": "artifacts\\predictions\\common_local_seed43_train",
+  "fit_origins": 3864,
+  "holdout_origins": 1933,
+  "horizon_hours": 72,
+  "causal_origin_lags": [
+    24,
+    48
+  ],
+  "cumulative_explained_variance": {
+    "1": 0.1416841596364975,
+    "4": 0.3204765021800995,
+    "8": 0.43032383918762207,
+    "16": 0.5520319938659668,
+    "32": 0.6890719532966614
+  },
+  "holdout_base_mae": 18.756620407104492,
+  "holdout_mode_corrected_mae": 20.19462776184082,
+  "holdout_delta_mae": 1.4380073547363281,
+  "decision": "reject",
+  "test_accessed": false
+}

@@ -68,3 +68,70 @@ The evaluator rejects mismatched shapes, truth arrays or forecast origins and
 reports Day 1/2/3/overall MAE, RMSE, sMAPE, persistence-relative MAE skill, and a
 paired moving-block bootstrap interval for the MAE difference.
 
+## 5. Post-audit next-generation experiments
+
+The KnowAir test has already been inspected. All next-generation model selection
+therefore stays on train/validation; do not add `--split test` for these models.
+
+Three-seed prediction ensembles (mean, median, and validation-fitted convex):
+
+```powershell
+.\.venv\Scripts\python.exe scripts\ensemble_predictions.py
+```
+
+Separated conservative transport and unconstrained source/sink correction:
+
+```powershell
+.\.venv\Scripts\python.exe -m common_local.ablate --variants transport_source --seeds 42 43 44 --epochs 20 --patience 4 --batch-size 256 --output-dir artifacts\transport_source --device cuda
+```
+
+Compact capacity/loss search with large-batch LR scheduling:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\search_common_local.py --batch-size 256 --device cuda
+```
+
+Sequential Transport--Source Recurrent Operator (72,659 parameters):
+
+```powershell
+.\.venv\Scripts\python.exe -m common_local.train_dynamics --seeds 43 --epochs 30 --patience 6 --batch-size 256 --output-dir artifacts\transport_source_recurrent --device cuda
+```
+
+Strict-input version (no PBL/ventilation/dewpoint-deficit/month) used for the
+paper-table comparison:
+
+```powershell
+.\.venv\Scripts\python.exe -m common_local.train_dynamics --seeds 42 43 44 --epochs 30 --patience 6 --batch-size 256 --disable-auxiliary --disable-month --output-dir artifacts\transport_source_recurrent_strict --device cuda
+```
+
+Its validation-frozen convex ensemble reaches test MAE 15.8086 versus the AirDDE
+paper reference 16.92. Exact hashes, weights, and test results are recorded under
+`frozen/transport_source_recurrent_strict`.
+
+The optional regime/event expert is a warm-started ablation. It remains selected
+by global validation MAE, not classification accuracy:
+
+```powershell
+.\.venv\Scripts\python.exe -m common_local.train_dynamics --seeds 43 --epochs 12 --patience 4 --batch-size 256 --lr 0.0003 --event-expert --initialize-from artifacts\transport_source_recurrent\seed_43\best_model.pt --output-dir artifacts\transport_source_recurrent_event --device cuda
+```
+
+Low-rank residual probe (training split only):
+
+```powershell
+.\.venv\Scripts\python.exe -m common_local.export_predictions --seed 43 --checkpoint artifacts\common_local\seed_43\best_model.pt --output artifacts\predictions\common_local_seed43_train --split train --batch-size 256
+.\.venv\Scripts\python.exe scripts\probe_residual_modes.py artifacts\predictions\common_local_seed43_train
+```
+
+AirDDE multi-seed training is intentionally a separate long job. The wrapper now
+retains each seed automatically instead of allowing the release's fixed checkpoint
+path to overwrite the preceding seed:
+
+```powershell
+foreach ($seed in 42,43,44) {
+  .\.venv\Scripts\python.exe scripts\run_airdde.py train --random_seed $seed
+  .\.venv\Scripts\python.exe scripts\export_airdde_predictions.py --seed $seed --checkpoint "artifacts/airdde/seed_$seed/checkpoint.pth" --output "artifacts/predictions/airdde_seed${seed}_val"
+}
+```
+
+An explicitly approximate paper-style run (Huber/SmoothL1 and patience 10) is
+available with `--paper-style`; it is not labelled an exact paper reproduction.

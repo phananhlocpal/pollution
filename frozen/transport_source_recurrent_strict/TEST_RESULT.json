@@ -1,0 +1,35 @@
+{
+  "freeze_manifest": "frozen/transport_source_recurrent_strict/MANIFEST.json",
+  "strict_checkpoint_hashes_verified_before_test": true,
+  "paper_reference": {
+    "mae": 16.92,
+    "rmse": 27.78,
+    "smape": 0.38
+  },
+  "individual_seed_test_mae": {
+    "42": 16.25837516784668,
+    "43": 16.044116973876953,
+    "44": 16.083044052124023
+  },
+  "frozen_convex_ensemble": {
+    "weights_by_seed_42_43_44": [
+      0.3219134746662225,
+      0.36797691249021847,
+      0.31010961284355915
+    ],
+    "test_mae": 15.80861759185791,
+    "test_rmse": 24.301437377929688,
+    "test_smape_official": 0.37167757749557495,
+    "test_smape_masked": 0.3713262677192688,
+    "day_mae": [
+      13.699371337890625,
+      16.50503921508789,
+      17.221405029296875
+    ],
+    "mae_improvement_over_paper": 1.1113824081420915,
+    "relative_mae_improvement_percent": 6.568453948830328
+  },
+  "mean_ensemble_test_mae": 15.812956809997559,
+  "primary_claim": "The strict-input recurrent convex ensemble beats all three published AirDDE KnowAir aggregate point estimates.",
+  "caveat": "KnowAir test had already been viewed for the extended track; strict checkpoint identities and ensemble weights were nevertheless fixed before strict test export."
+}

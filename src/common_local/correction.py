@@ -118,3 +118,49 @@ class FrozenResidualCorrection(nn.Module):
         output["residual_prediction"] = output["residual_prediction"] + correction
         output["correction"] = correction
         return output
+
+
+class FrozenTransportSourceCorrection(FrozenResidualCorrection):
+    """Conservative wind transport plus unconstrained meteorological source/sink."""
+
+    def __init__(self, city_path, feature_mean, feature_std, hidden_dim=16):
+        super().__init__(("wind", "meteo"), city_path, feature_mean, feature_std, hidden_dim)
+        del self.correction_head
+        self.month_embedding = nn.Embedding(12, 4)
+        self.transport_head = nn.Sequential(
+            nn.Linear(2 + 4, hidden_dim), nn.Tanh(), nn.Linear(hidden_dim, 1),
+        )
+        self.source_head = nn.Sequential(
+            nn.Linear(3 + 4 + 4, hidden_dim), nn.Tanh(), nn.Linear(hidden_dim, 1),
+        )
+        for head in (self.transport_head, self.source_head):
+            nn.init.zeros_(head[-1].weight); nn.init.zeros_(head[-1].bias)
+
+    def forward(self, batch):
+        with torch.no_grad():
+            output = self.base(batch)
+        x = batch["x"]; batch_size, _, stations, _ = x.shape
+        wind = torch.stack((self._wind_innovation(x, 0), self._wind_innovation(x, 1)), -1)
+        wind = wind[:, None].expand(-1, 24, -1, -1)
+        horizon = self.horizon_embedding(torch.arange(24, device=x.device))
+        horizon_nodes = horizon[None, :, None].expand(batch_size, -1, stations, -1)
+        transport = self.transport_head(torch.cat((wind, horizon_nodes), -1)).squeeze(-1)
+        transport = transport - transport.mean(-1, keepdim=True)
+
+        auxiliary = batch["future_auxiliary"]
+        source_inputs = auxiliary[..., (2, 3, 4)]
+        month = self.month_embedding(batch["future_month"])
+        month_nodes = month[:, :, None].expand(-1, -1, stations, -1)
+        source = self.source_head(
+            torch.cat((source_inputs, horizon_nodes, month_nodes), -1)
+        ).squeeze(-1)
+        source_common = source.mean(-1)
+        source_local = source - source_common[:, :, None]
+        correction = transport + source
+        output["prediction"] = output["prediction"] + correction
+        output["common_prediction"] = output["common_prediction"] + source_common
+        output["residual_prediction"] = output["residual_prediction"] + transport + source_local
+        output["transport_correction"] = transport
+        output["source_correction"] = source
+        output["correction"] = correction
+        return output

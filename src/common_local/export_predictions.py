@@ -12,7 +12,8 @@ import torch
 from torch.utils.data import DataLoader
 
 from .data import CommonLocalWindowDataset, load_panel
-from .correction import FrozenResidualCorrection
+from .correction import FrozenResidualCorrection, FrozenTransportSourceCorrection
+from .dynamics import TransportSourceRecurrentForecaster
 from .model import CommonLocalForecaster
 
 
@@ -36,13 +37,32 @@ def export(args):
     checkpoint_path = root / args.checkpoint
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     components = tuple(checkpoint.get("components", ()))
-    if components:
+    architecture = checkpoint.get("architecture", "static_correction" if components else "common_local")
+    if architecture == "transport_source_recurrent":
+        model = TransportSourceRecurrentForecaster(
+            root / "data/benchmarks/knowair/city.txt",
+            stations=len(panel.stations), **checkpoint.get("config", {}),
+        ).to(device)
+    elif architecture == "transport_source":
+        model = FrozenTransportSourceCorrection(
+            root / "data/benchmarks/knowair/city.txt", panel.mean, panel.std
+        ).to(device)
+    elif components:
         model = FrozenResidualCorrection(
             components, root / "data/benchmarks/knowair/city.txt", panel.mean, panel.std
         ).to(device)
     else:
-        model = CommonLocalForecaster(stations=len(panel.stations)).to(device)
-    model.load_state_dict(checkpoint["model_state"], strict=True)
+        model = CommonLocalForecaster(
+            stations=len(panel.stations), **checkpoint.get("config", {})
+        ).to(device)
+    incompatible = model.load_state_dict(
+        checkpoint["model_state"], strict=architecture != "transport_source_recurrent"
+    )
+    if architecture == "transport_source_recurrent":
+        unexpected = list(incompatible.unexpected_keys)
+        missing = [key for key in incompatible.missing_keys if key != "station_threshold"]
+        if missing or unexpected:
+            raise ValueError(f"Incompatible recurrent checkpoint: missing={missing}, unexpected={unexpected}")
     model.eval()
 
     output = root / args.output
@@ -70,7 +90,9 @@ def export(args):
     prediction.flush(); truth.flush(); persistence.flush()
     np.save(output / "forecast_start.npy", starts)
     manifest = {
-        "model": "common_local+" + "+".join(components) if components else "common_local",
+        "model": architecture if architecture == "transport_source_recurrent" else
+                 "common_local+" + architecture if components else "common_local",
+        "architecture": architecture,
         "components": list(components), "seed": args.seed, "split": args.split,
         "shape": list(shape), "cadence_hours": panel.cadence_hours,
         "history_steps": 24, "horizon_steps": 24,
@@ -88,7 +110,7 @@ def main():
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--checkpoint", default="artifacts/common_local/seed_42/best_model.pt")
     parser.add_argument("--output", default="artifacts/predictions/common_local_seed42_val")
-    parser.add_argument("--split", choices=("val", "test"), default="val")
+    parser.add_argument("--split", choices=("train", "val", "test"), default="val")
     parser.add_argument("--allow-test", action="store_true")
     parser.add_argument("--batch-size", type=int, default=16)
     parser.add_argument("--max-samples", type=int)

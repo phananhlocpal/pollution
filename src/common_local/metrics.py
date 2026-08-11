@@ -21,6 +21,7 @@ def physical_metrics(prediction, truth):
         "mae": float(np.abs(difference)[valid].mean()),
         "rmse": float(np.sqrt(np.square(difference)[valid].mean())),
         "smape": float(np.mean(np.abs(difference) / denominator)),
+        "smape_masked": float((np.abs(difference) / denominator)[valid].mean()),
         "points": int(valid.sum()),
     }
 

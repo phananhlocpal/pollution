@@ -10,7 +10,7 @@ import random
 import numpy as np
 import torch
 
-from .correction import FrozenResidualCorrection
+from .correction import FrozenResidualCorrection, FrozenTransportSourceCorrection
 from .data import CommonLocalWindowDataset, load_panel
 from .train import _loader, _run_epoch, choose_device
 
@@ -22,15 +22,23 @@ VARIANTS = {
     "regional": ("regional",),
     "wind_meteo": ("wind", "meteo"),
     "wind_spatial": ("wind", "spatial"),
+    "transport_source": ("wind", "meteo", "dewpoint_deficit", "month"),
 }
 
 
 def run_variant(args, variant, seed):
     random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
     root = Path(args.root); panel = load_panel(root); device = choose_device(args.device)
-    model = FrozenResidualCorrection(
-        VARIANTS[variant], root / "data/benchmarks/knowair/city.txt", panel.mean, panel.std
-    ).to(device)
+    if variant == "transport_source":
+        model = FrozenTransportSourceCorrection(
+            root / "data/benchmarks/knowair/city.txt", panel.mean, panel.std
+        ).to(device)
+        architecture = "transport_source"
+    else:
+        model = FrozenResidualCorrection(
+            VARIANTS[variant], root / "data/benchmarks/knowair/city.txt", panel.mean, panel.std
+        ).to(device)
+        architecture = "static_correction"
     base_path = root / f"artifacts/common_local/seed_{seed}/best_model.pt"
     model.base.load_state_dict(torch.load(base_path, map_location=device, weights_only=False)["model_state"])
     train_set = CommonLocalWindowDataset(panel, "train", args.max_train_samples)
@@ -51,7 +59,8 @@ def run_variant(args, variant, seed):
         print(json.dumps({"variant": variant, "seed": seed, **history[-1]}))
         if mae < best:
             best, stale, best_epoch = mae, 0, epoch
-            torch.save({"model_state": model.state_dict(), "components": VARIANTS[variant]}, checkpoint)
+            torch.save({"model_state": model.state_dict(), "components": VARIANTS[variant],
+                        "architecture": architecture}, checkpoint)
         else:
             stale += 1
             if stale >= args.patience:
@@ -61,7 +70,8 @@ def run_variant(args, variant, seed):
     baseline = json.loads((root / f"artifacts/common_local/seed_{seed}/metrics.json").read_text())
     baseline_mae = baseline["validation"]["metrics"]["overall_1_72h"]["mae"]
     payload = {
-        "variant": variant, "components": VARIANTS[variant], "seed": seed,
+        "variant": variant, "architecture": architecture,
+        "components": VARIANTS[variant], "seed": seed,
         "best_epoch": best_epoch, "baseline_validation_mae": baseline_mae,
         "validation": validation, "delta_mae": best - baseline_mae,
         "trainable_parameters": sum(p.numel() for p in model.parameters() if p.requires_grad),
@@ -97,4 +107,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

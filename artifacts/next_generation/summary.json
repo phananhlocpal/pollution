@@ -1,0 +1,134 @@
+{
+  "development_policy": {
+    "selection_split": "validation",
+    "test_accessed_during_model_selection": false,
+    "test_accessed_after_freeze": true,
+    "feature_tracks": [
+      "extended_information",
+      "strict_raw_information_parity"
+    ]
+  },
+  "prediction_ensemble": {
+    "selected_static_convex_weights": [
+      0.31419524408543476,
+      0.37086106106119265,
+      0.3149436948533726
+    ],
+    "selected_static_validation_mae": 18.24818229675293,
+    "selected_static_legacy_test_mae": 16.948745727539062
+  },
+  "transport_source_correction": {
+    "trainable_parameters": 482,
+    "validation_mae_by_seed": [
+      18.63315200805664,
+      18.420934677124023,
+      18.464317321777344
+    ],
+    "validation_mean_mae": 18.506134668986004
+  },
+  "capacity_search": {
+    "best_trial": "h96_l1",
+    "parameter_count": 93314,
+    "validation_mae": 18.887887954711914,
+    "decision": "reject"
+  },
+  "transport_source_recurrent": {
+    "parameter_count": 72659,
+    "validation_mae_by_seed": [
+      16.63934898376465,
+      16.496671676635742,
+      16.472673416137695
+    ],
+    "validation_mean_mae": 16.536231358846027,
+    "validation_std_mae": 0.09010500848108222,
+    "validation_mean_day_mae": [
+      14.61893622080485,
+      17.179339090983074,
+      17.810402552286785
+    ],
+    "convex_ensemble_validation_mae": 16.12358856201172,
+    "convex_weights": [
+      0.2382254248558966,
+      0.3648784319859746,
+      0.3968961431581288
+    ],
+    "airdde_seed2024_validation_delta_mae": 0.049090489745140076,
+    "airdde_seed2024_validation_block_ci95": [
+      -0.12764668986201286,
+      0.2535644695162772
+    ],
+    "block_length_sensitivity_ci95": {
+      "24": [-0.12764668986201286, 0.2535644695162772],
+      "48": [-0.1465481199324131, 0.3015922054648399],
+      "96": [-0.1908838503062725, 0.3295255742967128]
+    },
+    "test_mae_by_seed": [
+      16.45755386352539,
+      16.43263816833496,
+      16.39157485961914
+    ],
+    "frozen_convex_ensemble_test_mae": 16.053688049316406,
+    "frozen_convex_ensemble_test_rmse": 24.165021896362305,
+    "frozen_convex_ensemble_test_smape": 0.37777185440063477,
+    "airdde_paper_reference_mae": 16.92,
+    "test_improvement_over_paper_mae": 0.8663119506835955,
+    "test_relative_improvement_percent": 5.120046989855765
+  },
+  "event_expert": {
+    "parameter_count": 78357,
+    "validation_mae": 16.521541595458984,
+    "base_seed43_validation_mae": 16.496671676635742,
+    "decision": "reject"
+  },
+  "strict_feature_track": {
+    "disabled_inputs": [
+      "boundary_layer_height",
+      "ventilation",
+      "dewpoint_deficit",
+      "month"
+    ],
+    "validation_mae_by_seed": [
+      16.79404640197754,
+      16.750455856323242,
+      16.755868911743164
+    ],
+    "validation_mean_mae": 16.76679039001465,
+    "validation_std_mae": 0.023759060026350243,
+    "convex_ensemble_validation_mae": 16.459192276000977,
+    "convex_weights": [
+      0.3219134746662225,
+      0.36797691249021847,
+      0.31010961284355915
+    ],
+    "test_mae_by_seed": [
+      16.25837516784668,
+      16.044116973876953,
+      16.083044052124023
+    ],
+    "frozen_convex_ensemble_test_mae": 15.80861759185791,
+    "frozen_convex_ensemble_test_rmse": 24.301437377929688,
+    "frozen_convex_ensemble_test_smape": 0.37167757749557495,
+    "test_improvement_over_paper_mae": 1.1113824081420915,
+    "test_relative_improvement_percent": 6.568453948830328
+  },
+  "recurrent_frozen_knockout": {
+    "no_transport_delta_validation_mae": 5.010185241699219,
+    "no_source_delta_validation_mae": 5.802106221516927,
+    "no_lagged_transport_delta_validation_mae": 0.7022024790445963,
+    "no_month_delta_validation_mae": 0.18782361348470053,
+    "note": "Frozen-checkpoint knockout; not equivalent to retraining the ablated architecture."
+  },
+  "residual_modes": {
+    "variance_explained_32_modes": 0.6890719532966614,
+    "causal_72h_delta_mae": 1.4380073547363281,
+    "decision": "reject"
+  },
+  "efficiency_batch8": {
+    "transport_source_recurrent_median_ms_per_origin": 4.024863958358765,
+    "transport_source_recurrent_p95_ms_per_origin": 6.780545926094055,
+    "airdde_median_ms_per_origin": 98.22968292236328,
+    "airdde_p95_ms_per_origin": 119.20377578735352,
+    "median_speedup_vs_airdde": 24.405738252446365
+  },
+  "optional_not_on_critical_path": "AirDDE release multi-seed and approximate paper-style reproduction"
+}

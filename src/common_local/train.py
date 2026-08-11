@@ -39,7 +39,7 @@ def _loader(dataset, batch_size, seed, shuffle):
     )
 
 
-def _run_epoch(model, loader, panel, device, optimizer=None):
+def _run_epoch(model, loader, panel, device, optimizer=None, loss_kind="l1"):
     training = optimizer is not None; model.train(training)
     loss_sum = batches = 0; predictions, truths = [], []
     started = time.perf_counter()
@@ -48,7 +48,7 @@ def _run_epoch(model, loader, panel, device, optimizer=None):
         for batch in loader:
             batch = move_batch(batch, device); output = model(batch)
             loss, _ = common_local_loss(
-                output, batch["y"], float(panel.mean[0]), float(panel.std[0])
+                output, batch["y"], float(panel.mean[0]), float(panel.std[0]), loss_kind
             )
             if training:
                 optimizer.zero_grad(set_to_none=True); loss.backward()
@@ -74,7 +74,12 @@ def run_seed(args, seed):
     val_set = CommonLocalWindowDataset(panel, "val", args.max_eval_samples)
     train_loader = _loader(train_set, args.batch_size, seed, True)
     val_loader = _loader(val_set, args.batch_size, seed, False)
-    model = CommonLocalForecaster(stations=len(panel.stations)).to(device)
+    config = {
+        "hidden_dim": args.hidden_dim, "horizon_dim": args.horizon_dim,
+        "station_dim": args.station_dim, "dropout": args.dropout,
+        "gru_layers": args.gru_layers,
+    }
+    model = CommonLocalForecaster(stations=len(panel.stations), **config).to(device)
     output = Path(args.output_dir) / f"seed_{seed}"; output.mkdir(parents=True, exist_ok=True)
     checkpoint = output / "best_model.pt"
     parameters = sum(value.numel() for value in model.parameters())
@@ -89,28 +94,38 @@ def run_seed(args, seed):
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=args.lr, weight_decay=args.weight_decay
     )
+    scheduler = None
+    if getattr(args, "scheduler", False):
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, factor=.5, patience=max(1, args.patience // 2), min_lr=1e-5
+        )
     best, best_epoch, stale, history = float("inf"), 0, 0, []
     print(f"model=common_local seed={seed} device={device} parameters={parameters:,} "
           f"train={len(train_set)} val={len(val_set)}")
     for epoch in range(1, args.epochs + 1):
-        train = _run_epoch(model, train_loader, panel, device, optimizer)
-        validation = _run_epoch(model, val_loader, panel, device)
+        train = _run_epoch(model, train_loader, panel, device, optimizer, args.loss)
+        validation = _run_epoch(model, val_loader, panel, device, loss_kind=args.loss)
         mae = validation["metrics"]["overall_1_72h"]["mae"]
+        if scheduler is not None:
+            scheduler.step(mae)
         row = {"epoch": epoch, "train_loss": train["loss"],
-               "validation_loss": validation["loss"], "validation_mae": mae}
+               "validation_loss": validation["loss"], "validation_mae": mae,
+               "learning_rate": optimizer.param_groups[0]["lr"]}
         history.append(row); print(json.dumps(row))
         if mae < best:
             best, best_epoch, stale = mae, epoch, 0
-            torch.save({"model_state": model.state_dict()}, checkpoint)
+            torch.save({"model_state": model.state_dict(), "architecture": "common_local",
+                        "config": config, "loss": args.loss}, checkpoint)
         else:
             stale += 1
             if stale >= args.patience: break
     model.load_state_dict(torch.load(
         checkpoint, map_location=device, weights_only=False
     )["model_state"])
-    validation = _run_epoch(model, val_loader, panel, device)
+    validation = _run_epoch(model, val_loader, panel, device, loss_kind=args.loss)
     payload = {
         "model": "common_local", "seed": seed, "parameter_count": parameters,
+        "config": config, "loss": args.loss,
         "best_epoch": best_epoch, "best_validation_mae": best,
         "validation": validation, "history": history,
         "training_split": "first 50%", "validation_split": "next 25%",
@@ -130,6 +145,13 @@ def build_parser():
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-5)
+    parser.add_argument("--hidden-dim", type=int, default=48)
+    parser.add_argument("--horizon-dim", type=int, default=16)
+    parser.add_argument("--station-dim", type=int, default=8)
+    parser.add_argument("--dropout", type=float, default=.1)
+    parser.add_argument("--gru-layers", type=int, default=1)
+    parser.add_argument("--loss", choices=("l1", "huber"), default="l1")
+    parser.add_argument("--scheduler", action="store_true")
     parser.add_argument("--device", default="auto")
     parser.add_argument("--max-train-samples", type=int)
     parser.add_argument("--max-eval-samples", type=int)

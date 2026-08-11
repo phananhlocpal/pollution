@@ -9,28 +9,36 @@ from pathlib import Path
 import sys
 
 import torch
+import numpy as np
 
 from run_airdde import AIR_DDE, ROOT, install_compatibility_shims
-from common_local.correction import FrozenResidualCorrection
+from common_local.correction import FrozenResidualCorrection, FrozenTransportSourceCorrection
 from common_local.data import CommonLocalWindowDataset, load_panel
+from common_local.dynamics import TransportSourceRecurrentForecaster
 from common_local.model import CommonLocalForecaster
 
 
 def timed(name, model, call, batch_size, runs):
     model.eval()
     with torch.inference_mode():
-        call(); torch.cuda.synchronize()
-        torch.cuda.reset_peak_memory_stats()
-        start, end = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-        start.record()
-        for _ in range(runs):
+        for _ in range(10):
             call()
-        end.record(); torch.cuda.synchronize()
-    milliseconds = start.elapsed_time(end) / runs
+        torch.cuda.synchronize()
+        torch.cuda.reset_peak_memory_stats()
+        events = []
+        for _ in range(runs):
+            start, end = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+            start.record()
+            call()
+            end.record(); events.append((start, end))
+        torch.cuda.synchronize()
+    samples = np.asarray([start.elapsed_time(end) for start, end in events])
     return {
         "model": name, "batch_size": batch_size, "runs": runs,
-        "milliseconds_per_batch": milliseconds,
-        "milliseconds_per_origin": milliseconds / batch_size,
+        "milliseconds_per_batch_median": float(np.median(samples)),
+        "milliseconds_per_batch_p95": float(np.quantile(samples, .95)),
+        "milliseconds_per_origin_median": float(np.median(samples) / batch_size),
+        "milliseconds_per_origin_p95": float(np.quantile(samples, .95) / batch_size),
         "peak_allocated_mb": torch.cuda.max_memory_allocated() / 2**20,
         "parameters": sum(p.numel() for p in model.parameters()),
     }
@@ -39,7 +47,7 @@ def timed(name, model, call, batch_size, runs):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--batch-size", type=int, default=8)
-    parser.add_argument("--runs", type=int, default=5)
+    parser.add_argument("--runs", type=int, default=200)
     args = parser.parse_args(); device = torch.device("cuda")
     panel = load_panel(ROOT); dataset = CommonLocalWindowDataset(panel, "val", args.batch_size)
     batch = torch.utils.data.default_collate([dataset[i] for i in range(args.batch_size)])
@@ -56,7 +64,28 @@ def main():
         map_location=device, weights_only=False,
     )["model_state"])
     rows.append(timed("common_local+wind+meteo", selected, lambda: selected(batch), args.batch_size, args.runs))
-    del selected, batch; torch.cuda.empty_cache()
+    del selected; torch.cuda.empty_cache()
+    split = FrozenTransportSourceCorrection(
+        ROOT / "data/benchmarks/knowair/city.txt", panel.mean, panel.std
+    ).to(device)
+    split.load_state_dict(torch.load(
+        ROOT / "artifacts/transport_source/transport_source/seed_43/best_model.pt",
+        map_location=device, weights_only=False,
+    )["model_state"])
+    rows.append(timed("transport_source_correction", split, lambda: split(batch), args.batch_size, args.runs))
+    del split; torch.cuda.empty_cache()
+    dynamics_checkpoint = torch.load(
+        ROOT / "artifacts/transport_source_recurrent/seed_43/best_model.pt",
+        map_location=device, weights_only=False,
+    )
+    dynamics = TransportSourceRecurrentForecaster(
+        ROOT / "data/benchmarks/knowair/city.txt", **dynamics_checkpoint["config"]
+    ).to(device)
+    incompatible = dynamics.load_state_dict(dynamics_checkpoint["model_state"], strict=False)
+    if [key for key in incompatible.missing_keys if key != "station_threshold"] or incompatible.unexpected_keys:
+        raise ValueError(f"Incompatible recurrent checkpoint: {incompatible}")
+    rows.append(timed("transport_source_recurrent", dynamics, lambda: dynamics(batch), args.batch_size, args.runs))
+    del dynamics, batch; torch.cuda.empty_cache()
 
     os.chdir(AIR_DDE); sys.path.insert(0, str(AIR_DDE)); install_compatibility_shims()
     from eval import Evaluation_Air_Pollution
@@ -70,7 +99,7 @@ def main():
     namespace.GPU.use_gpu = True; namespace.GPU.gpu = 0; fix_seed(2024)
     experiment = Evaluation_Air_Pollution(namespace)
     experiment.model.load_state_dict(torch.load(
-        ROOT / "third_party/airdde/checkpoints/airdde/checkpoint.pth",
+        ROOT / "artifacts/airdde/seed_2024/checkpoint.pth",
         map_location=device, weights_only=True,
     ))
     _, loader = experiment._get_data("val")

@@ -9,6 +9,7 @@ from common_local.data import CommonLocalWindowDataset, FEATURES, Panel
 from common_local.losses import common_local_loss
 from common_local.metrics import validation_report
 from common_local.model import CommonLocalForecaster
+from common_local.dynamics import TransportSourceRecurrentForecaster
 
 
 def _panel():
@@ -59,6 +60,7 @@ def test_validation_report_has_three_days_and_24_horizons():
     report = validation_report(prediction, truth)
     assert report["overall_1_72h"]["mae"] == 2
     assert len(report["mae_by_horizon"]) == 24
+    assert report["overall_1_72h"]["smape_masked"] == report["overall_1_72h"]["smape"]
 
 
 def test_all_retained_checkpoints_match_the_canonical_architecture():
@@ -89,3 +91,25 @@ def test_frozen_correction_starts_as_exact_baseline(tmp_path):
         baseline = model.base(batch)["prediction"]
         corrected = model(batch)["prediction"]
     assert torch.allclose(corrected, baseline)
+
+
+def test_recurrent_operator_is_sequential_and_conservative_at_initialization(tmp_path):
+    city = tmp_path / "city.txt"
+    city.write_text("0 a 100 30\n1 b 101 31\n2 c 102 32\n")
+    model = TransportSourceRecurrentForecaster(
+        city, stations=3, horizon=4, hidden_dim=8,
+        station_dim=3, month_dim=2, operator_dim=4,
+    )
+    batch = {
+        "x": torch.randn(2, 6, 3, 7),
+        "future_weather": torch.randn(2, 4, 3, 6),
+        "future_auxiliary": torch.randn(2, 4, 3, 5),
+        "future_month": torch.randint(0, 12, (2, 4)),
+    }
+    output = model(batch)
+    persistence = batch["x"][:, -1, :, 0][:, None].expand(-1, 4, -1)
+    assert output["prediction"].shape == (2, 4, 3)
+    assert torch.allclose(output["prediction"], persistence, atol=1e-6)
+    assert torch.allclose(
+        output["transport_operator"].mean(-1), torch.zeros(2, 4), atol=1e-6
+    )

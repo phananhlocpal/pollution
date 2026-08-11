@@ -112,6 +112,10 @@ class CommonLocalWindowDataset(Dataset):
             starts = starts[np.linspace(0, len(starts) - 1, max_samples, dtype=int)]
         self.panel, self.split, self.starts = panel, split, starts
         self.history, self.horizon = history, horizon
+        timestamps = np.datetime64("2015-01-01T00") + (
+            np.arange(len(panel.values)) * panel.cadence_hours
+        ).astype("timedelta64[h]")
+        self.month_by_time = timestamps.astype("datetime64[M]").astype(np.int64) % 12
 
     def __len__(self):
         return len(self.starts)
@@ -130,5 +134,8 @@ class CommonLocalWindowDataset(Dataset):
             sample["future_auxiliary"] = torch.from_numpy(
                 self.panel.auxiliary[future_start:future_start + self.horizon]
             )
+            sample["future_month"] = torch.from_numpy(
+                self.month_by_time[future_start:future_start + self.horizon].copy()
+            ).long()
         return sample
 

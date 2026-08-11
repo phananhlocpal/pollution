@@ -19,11 +19,19 @@ class CommonLocalForecaster(nn.Module):
     """Forecast station-mean dynamics and zero-mean local dynamics separately."""
 
     def __init__(self, stations=184, weather_dim=6, horizon=24,
-                 hidden_dim=48, horizon_dim=16, station_dim=8, dropout=.1):
+                 hidden_dim=48, horizon_dim=16, station_dim=8, dropout=.1,
+                 gru_layers=1):
         super().__init__()
         self.horizon, self.weather_dim = horizon, weather_dim
-        self.common_gru = nn.GRU(1 + weather_dim + 1, hidden_dim, batch_first=True)
-        self.local_gru = nn.GRU(3 + weather_dim * 3, hidden_dim, batch_first=True)
+        gru_dropout = dropout if gru_layers > 1 else 0.0
+        self.common_gru = nn.GRU(
+            1 + weather_dim + 1, hidden_dim, num_layers=gru_layers,
+            dropout=gru_dropout, batch_first=True,
+        )
+        self.local_gru = nn.GRU(
+            3 + weather_dim * 3, hidden_dim, num_layers=gru_layers,
+            dropout=gru_dropout, batch_first=True,
+        )
         self.horizon_embedding = nn.Embedding(horizon, horizon_dim)
         self.station_embedding = nn.Embedding(stations, station_dim)
         self.common_head = _head(
