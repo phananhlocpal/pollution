@@ -1,0 +1,11 @@
+{
+  "model": "factorized_exogenous_transport_source_v3",
+  "seeds": [
+    43
+  ],
+  "validation_mae": [
+    28.961515426635742
+  ],
+  "validation_mean_mae": 28.961515426635742,
+  "test_accessed": false
+}

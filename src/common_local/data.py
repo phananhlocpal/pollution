@@ -437,3 +437,24 @@ class CommonLocalWindowDataset(Dataset):
             ).long()
         return sample
 
+
+class CommonLocalOriginDataset(CommonLocalWindowDataset):
+    """Common/local windows at explicit forecast origins for rolling development."""
+
+    def __init__(
+        self, panel: Panel, origins: np.ndarray, history: int = 24, horizon: int = 24,
+        max_samples: int | None = None,
+    ):
+        origins = np.asarray(origins, dtype=np.int64)
+        if np.any(origins < history) or np.any(origins + horizon > len(panel.values)):
+            raise ValueError("Explicit forecast origins exceed panel boundaries")
+        if max_samples is not None and len(origins) > max_samples:
+            origins = origins[np.linspace(0, len(origins) - 1, max_samples, dtype=int)]
+        self.panel, self.split = panel, "rolling"
+        self.starts = origins - history
+        self.history, self.horizon = history, horizon
+        timestamps = np.datetime64("2015-01-01T00") + (
+            np.arange(len(panel.values)) * panel.cadence_hours
+        ).astype("timedelta64[h]")
+        self.month_by_time = timestamps.astype("datetime64[M]").astype(np.int64) % 12
+

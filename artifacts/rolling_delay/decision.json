@@ -1,0 +1,49 @@
+{
+  "selection": "three rolling-origin folds inside KnowAir train only",
+  "fold_results": [
+    {
+      "fold": 1,
+      "variant": "factorized_v3",
+      "validation_mae": 28.961515426635742,
+      "test_accessed": false
+    },
+    {
+      "fold": 1,
+      "variant": "adaptive_delay",
+      "validation_mae": 29.6397762298584,
+      "test_accessed": false
+    },
+    {
+      "fold": 2,
+      "variant": "factorized_v3",
+      "validation_mae": 14.343013763427734,
+      "test_accessed": false
+    },
+    {
+      "fold": 2,
+      "variant": "adaptive_delay",
+      "validation_mae": 14.347259521484375,
+      "test_accessed": false
+    },
+    {
+      "fold": 3,
+      "variant": "factorized_v3",
+      "validation_mae": 25.478925704956055,
+      "test_accessed": false
+    },
+    {
+      "fold": 3,
+      "variant": "adaptive_delay",
+      "validation_mae": 25.277116775512695,
+      "test_accessed": false
+    }
+  ],
+  "mean_mae": {
+    "factorized_v3": 22.927818298339844,
+    "adaptive_delay": 23.088050842285156
+  },
+  "adaptive_gain": -0.1602325439453125,
+  "development_advancement_gain": 0.5,
+  "advance_to_original_validation": false,
+  "test_accessed": false
+}

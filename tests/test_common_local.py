@@ -4,9 +4,13 @@ import numpy as np
 import pytest
 import torch
 
+from common_local.analog_memory import (
+    global_keys, inverse_distance_weights, retrieve_neighbors, rolling_origin_folds,
+)
 from common_local.correction import FrozenResidualCorrection
 from common_local.data import (
-    CommonLocalWindowDataset, FEATURES, GAGNNAirDDEWindowDataset, Panel,
+    CommonLocalOriginDataset, CommonLocalWindowDataset, FEATURES,
+    GAGNNAirDDEWindowDataset, Panel,
     audit_gagnn_overlap, fit_seasonal_weather_weights, load_standard_panel,
 )
 from common_local.losses import common_local_loss
@@ -237,6 +241,52 @@ def test_train_fitted_seasonal_weights_are_convex_and_share_wind_vector_weights(
     assert np.all(weights >= 0)
     np.testing.assert_allclose(weights.sum(1), 1, atol=1e-6)
     np.testing.assert_allclose(weights[4], weights[5], atol=1e-7)
+
+
+def test_rolling_analog_memory_never_reads_across_dev_boundary():
+    folds = rolling_origin_folds(240, history=24, horizon=24, folds=3)
+    assert len(folds) == 3
+    for fold in folds:
+        assert fold.candidate_origins.max() + 24 <= fold.query_origins.min()
+        assert fold.query_origins.max() + 24 <= 240
+
+
+def test_analog_retrieval_recovers_exact_regime_and_normalizes_weights():
+    values = np.zeros((80, 2, 2), dtype=np.float32)
+    values[:, :, 0] = np.arange(80)[:, None]
+    values[:, :, 1] = (np.arange(80) % 7)[:, None]
+    candidates = np.array((24, 32, 40), dtype=np.int64)
+    keys = global_keys(values, candidates, 24, "multiscale")
+    indices, distances = retrieve_neighbors(keys, keys[[1]], k=3)
+    assert indices[0, 0] == 1
+    weights = inverse_distance_weights(distances)
+    np.testing.assert_allclose(weights.sum(1), 1.0)
+    assert weights[0, 0] == pytest.approx(1.0)
+
+
+def test_explicit_origin_dataset_and_adaptive_delay_remain_history_only(tmp_path):
+    panel = _panel()
+    dataset = CommonLocalOriginDataset(panel, np.array((48, 56)), horizon=4)
+    assert int(dataset[0]["forecast_start"]) == 48
+    city = tmp_path / "city.txt"
+    city.write_text("0 a 100 30\n1 b 101 31\n2 c 102 32\n")
+    model = TransportSourceRecurrentForecaster(
+        city, stations=3, horizon=4, hidden_dim=8, station_dim=3,
+        month_dim=2, operator_dim=4, future_weather_mode="factorized",
+        use_adaptive_delay=True, delay_dim=5, use_auxiliary=False,
+        use_month=False,
+    ).eval()
+    batch = {
+        "x": torch.randn(2, 24, 3, 7),
+        "future_weather": torch.randn(2, 4, 3, 6),
+        "future_auxiliary": torch.randn(2, 4, 3, 5),
+        "future_month": torch.randint(0, 12, (2, 4)),
+    }
+    with torch.no_grad():
+        first = model(batch)
+        second = model({**batch, "future_weather": batch["future_weather"] + 1000})
+    assert torch.allclose(first["prediction"], second["prediction"])
+    assert model.use_lagged_transport is False
 
 
 def test_external_panel_contract_and_operator_port(tmp_path):

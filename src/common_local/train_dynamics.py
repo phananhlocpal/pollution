@@ -10,8 +10,10 @@ from pathlib import Path
 import numpy as np
 import torch
 
+from .analog_memory import rolling_origin_folds
 from .data import (
-    CommonLocalWindowDataset, GAGNNAirDDEWindowDataset, GAGNNWindowDataset,
+    CommonLocalOriginDataset, CommonLocalWindowDataset,
+    GAGNNAirDDEWindowDataset, GAGNNWindowDataset,
     audit_gagnn_overlap, fit_seasonal_weather_weights, load_gagnn_metadata,
     load_panel, load_standard_panel,
 )
@@ -49,12 +51,25 @@ def run_seed(args, seed):
         val_set = dataset_type(root / args.gagnn_dir, "val", panel, args.max_eval_samples)
         history, horizon = panel.history, panel.horizon
     else:
-        train_set = CommonLocalWindowDataset(
-            panel, "train", args.max_train_samples, args.history, args.horizon
-        )
-        val_set = CommonLocalWindowDataset(
-            panel, "val", args.max_eval_samples, args.history, args.horizon
-        )
+        if args.rolling_fold:
+            fold = rolling_origin_folds(
+                panel.split_points[0], args.history, args.horizon
+            )[args.rolling_fold - 1]
+            train_set = CommonLocalOriginDataset(
+                panel, fold.candidate_origins, args.history, args.horizon,
+                args.max_train_samples,
+            )
+            val_set = CommonLocalOriginDataset(
+                panel, fold.query_origins, args.history, args.horizon,
+                args.max_eval_samples,
+            )
+        else:
+            train_set = CommonLocalWindowDataset(
+                panel, "train", args.max_train_samples, args.history, args.horizon
+            )
+            val_set = CommonLocalWindowDataset(
+                panel, "val", args.max_eval_samples, args.history, args.horizon
+            )
         history, horizon = args.history, args.horizon
     train_loader = _loader(train_set, args.batch_size, seed, True)
     val_loader = _loader(val_set, args.batch_size, seed, False)
@@ -76,6 +91,8 @@ def run_seed(args, seed):
         "transport_forcing_dim": args.transport_forcing_dim,
         "source_forcing_dim": args.source_forcing_dim,
         "horizon_embedding_dim": args.horizon_embedding_dim,
+        "use_adaptive_delay": args.adaptive_delay,
+        "delay_dim": args.delay_dim,
         "seasonal_period": args.seasonal_period,
         "horizon": horizon,
     }
@@ -120,6 +137,8 @@ def run_seed(args, seed):
         "latent": "latent_forcing_transport_source_recurrent_v2",
         "factorized": "factorized_exogenous_transport_source_v3",
     }.get(args.future_weather_mode, "transport_source_recurrent")
+    if args.adaptive_delay:
+        architecture = "adaptive_delayed_transport_source_v4"
     for epoch in range(1, args.epochs + 1):
         train = _run_epoch(model, train_loader, panel, device, optimizer)
         validation = _run_epoch(model, val_loader, panel, device)
@@ -150,8 +169,14 @@ def run_seed(args, seed):
         "config": config, "parameter_count": parameters,
         "best_epoch": best_epoch, "best_validation_mae": best,
         "validation": validation, "history": history,
-        "training_split": "official released train split" if args.gagnn_dir else "first 50%",
-        "validation_split": "official released validation split" if args.gagnn_dir else "next 25%",
+        "training_split": (
+            "official released train split" if args.gagnn_dir else
+            f"rolling train fold {args.rolling_fold}" if args.rolling_fold else "first 50%"
+        ),
+        "validation_split": (
+            "official released validation split" if args.gagnn_dir else
+            f"rolling dev fold {args.rolling_fold}" if args.rolling_fold else "next 25%"
+        ),
         "gagnn_protocol": args.gagnn_protocol if args.gagnn_dir else None,
         "test_accessed": False,
     }
@@ -173,6 +198,7 @@ def main():
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--history", type=int, default=24)
     parser.add_argument("--horizon", type=int, default=24)
+    parser.add_argument("--rolling-fold", type=int, choices=(1, 2, 3))
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-5)
     parser.add_argument("--hidden-dim", type=int, default=64)
@@ -199,6 +225,8 @@ def main():
     parser.add_argument("--transport-forcing-dim", type=int, default=16)
     parser.add_argument("--source-forcing-dim", type=int, default=32)
     parser.add_argument("--horizon-embedding-dim", type=int, default=8)
+    parser.add_argument("--adaptive-delay", action="store_true")
+    parser.add_argument("--delay-dim", type=int, default=16)
     parser.add_argument("--seasonal-period", type=int, default=8)
     parser.add_argument("--seasonal-cycles", type=int, default=3)
     parser.add_argument("--device", default="auto")

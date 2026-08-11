@@ -50,6 +50,8 @@ class TransportSourceRecurrentForecaster(nn.Module):
         transport_forcing_dim: int = 16,
         source_forcing_dim: int = 32,
         horizon_embedding_dim: int = 8,
+        use_adaptive_delay: bool = False,
+        delay_dim: int = 16,
         coordinates=None,
     ):
         super().__init__()
@@ -69,6 +71,9 @@ class TransportSourceRecurrentForecaster(nn.Module):
         self.future_weather_mode = future_weather_mode
         self.latent_forcing = future_weather_mode == "latent"
         self.factorized_forcing = future_weather_mode == "factorized"
+        self.use_adaptive_delay = use_adaptive_delay
+        if use_adaptive_delay and not self.factorized_forcing:
+            raise ValueError("Adaptive delayed-state retrieval currently requires V3 forcing")
         # History-only V2/V3 deliberately remove the explicit lag pathway.
         if self.latent_forcing or self.factorized_forcing:
             self.use_lagged_transport = False
@@ -134,6 +139,9 @@ class TransportSourceRecurrentForecaster(nn.Module):
             if self.transport_weather_head is not None:
                 nn.init.zeros_(self.transport_weather_head.weight)
                 nn.init.zeros_(self.transport_weather_head.bias)
+        if self.use_adaptive_delay:
+            self.delay_key = nn.Linear(1 + weather_dim, delay_dim)
+            self.delay_query = nn.Linear(hidden_dim + horizon_embedding_dim, delay_dim)
         self.station_embedding = nn.Embedding(stations, station_dim)
         self.month_embedding = nn.Embedding(12, month_dim)
 
@@ -143,7 +151,10 @@ class TransportSourceRecurrentForecaster(nn.Module):
         )
         common_future_dim = 1 + forcing_dim + auxiliary_dim + month_dim
         local_feature_dim = 1 + forcing_dim + auxiliary_dim + month_dim + station_dim
-        operator_terms = 1 if (self.latent_forcing or self.factorized_forcing) else 2
+        operator_terms = (
+            2 if self.use_adaptive_delay else
+            1 if (self.latent_forcing or self.factorized_forcing) else 2
+        )
         local_future_dim = local_feature_dim + operator_terms
         self.common_cell = nn.GRUCell(common_future_dim, hidden_dim)
         self.local_cell = nn.GRUCell(local_future_dim, hidden_dim)
@@ -213,6 +224,23 @@ class TransportSourceRecurrentForecaster(nn.Module):
         neighbor_state = state[:, self.neighbor_index]
         weights = self.edge_weight[None]
         weights = weights / weights.sum(-1, keepdim=True).clamp_min(1e-8)
+        return (weights * neighbor_state).sum(-1) - state
+
+    def _wind_delayed_innovation(
+        self, state: torch.Tensor, delayed_state: torch.Tensor,
+        wind_sin: torch.Tensor, wind_cos: torch.Tensor,
+    ) -> torch.Tensor:
+        """Transport retrieved historical neighbor states into the current field."""
+        neighbor_state = delayed_state[:, self.neighbor_index]
+        flow_east = (-wind_sin)[:, self.neighbor_index]
+        flow_north = (-wind_cos)[:, self.neighbor_index]
+        alignment = torch.relu(
+            self.edge_east[None] * flow_east + self.edge_north[None] * flow_north
+        )
+        weights = self.edge_weight[None] * alignment
+        total = weights.sum(-1, keepdim=True)
+        fallback = self.edge_weight[None].expand_as(weights)
+        weights = torch.where(total > 1e-8, weights / total.clamp_min(1e-8), fallback)
         return (weights * neighbor_state).sum(-1) - state
 
     def _initial_latent_forcing(self, weather: torch.Tensor):
@@ -301,6 +329,9 @@ class TransportSourceRecurrentForecaster(nn.Module):
         else:
             auxiliary = x.new_zeros(batch_size, self.horizon, stations, 3)
         pm, weather = x[..., :1], x[..., 1:]
+        if self.use_adaptive_delay:
+            delay_keys = torch.tanh(self.delay_key(torch.cat((pm, weather), -1)))
+            delay_values = pm[..., 0]
         causal_weather_prediction = None
         if self.future_weather_mode in {
             "persistence", "learned", "seasonal", "seasonal_weighted"
@@ -408,15 +439,37 @@ class TransportSourceRecurrentForecaster(nn.Module):
                 transport_context = weather_step[..., 3:4]
             if not self.use_lagged_transport:
                 innovation_lag = torch.zeros_like(innovation_lag)
+            adaptive_innovation = torch.zeros_like(innovation_now)
+            if self.use_adaptive_delay:
+                delay_query = self.delay_query(torch.cat((
+                    local_hidden, horizon_nodes,
+                ), -1))
+                attention = torch.softmax(
+                    torch.einsum("bnd,btnd->bnt", delay_query, delay_keys)
+                    / np.sqrt(delay_query.shape[-1]),
+                    -1,
+                )
+                delayed_state = torch.einsum(
+                    "bnt,btn->bn", attention, delay_values
+                )
+                adaptive_innovation = self._wind_delayed_innovation(
+                    state, delayed_state, weather_step[..., 4], weather_step[..., 5]
+                )
             if not self.use_transport:
                 innovation_now = torch.zeros_like(innovation_now)
                 innovation_lag = torch.zeros_like(innovation_lag)
+                adaptive_innovation = torch.zeros_like(adaptive_innovation)
             residual_state = state - state.mean(-1, keepdim=True)
             local_features = torch.cat((
                 residual_state[..., None], local_forcing_step, auxiliary_step,
                 month_nodes, station,
             ), -1)
-            if self.latent_forcing or self.factorized_forcing:
+            if self.use_adaptive_delay:
+                local_recurrent = torch.cat((
+                    local_features, innovation_now[..., None],
+                    adaptive_innovation[..., None],
+                ), -1)
+            elif self.latent_forcing or self.factorized_forcing:
                 local_recurrent = torch.cat((
                     local_features, innovation_now[..., None],
                 ), -1)
@@ -429,7 +482,12 @@ class TransportSourceRecurrentForecaster(nn.Module):
                 local_hidden.reshape(batch_size * stations, -1),
             ).reshape(batch_size, stations, -1)
 
-            if self.latent_forcing or self.factorized_forcing:
+            if self.use_adaptive_delay:
+                transport_input = torch.cat((
+                    local_hidden, innovation_now[..., None],
+                    adaptive_innovation[..., None], transport_context,
+                ), -1)
+            elif self.latent_forcing or self.factorized_forcing:
                 transport_input = torch.cat((
                     local_hidden, innovation_now[..., None], transport_context,
                 ), -1)

@@ -1,0 +1,11 @@
+{
+  "model": "adaptive_delayed_transport_source_v4",
+  "seeds": [
+    43
+  ],
+  "validation_mae": [
+    14.347259521484375
+  ],
+  "validation_mean_mae": 14.347259521484375,
+  "test_accessed": false
+}

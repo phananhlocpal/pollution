@@ -97,6 +97,13 @@ no locally reproduced release number is treated as an AirDDE result.
 The China-AQI row is reference context only until an information- and
 horizon-matched 96h-to-24h model passes the sealed validation gate.
 
+The paper also reports KnowAir Day-1/2/3 MAE 14.53 / 17.16 / 18.01 and the
+following mechanism ablations: 19.16 without memory-augmented attention, 17.80
+without global memory, 17.44 without local memory, 19.39 without PDE evolution,
+18.18 without source/sink, and 18.78 when attention replaces physics evolution.
+These are published mechanism references only; their deltas are not transferred
+numerically to this architecture.
+
 ## Frozen test confirmation against the paper
 
 All three individual recurrent seeds beat the published AirDDE KnowAir MAE of
@@ -198,6 +205,35 @@ unchanged at 24.7 / 63.0 / 76.5 degrees for 3 / 24 / 72h. The V3 gate therefore
 failed. No three-seed V3 training or test evaluation ran, and deterministic
 architecture escalation is stopped rather than weakening the gate. The complete
 decision record is `artifacts/factorized_v3/decision.json`.
+
+### Train-only analog memory probe
+
+Historical-regime retrieval was selected on three expanding rolling-origin folds
+inside the first 50% training split. The memory bank contained only continuations
+ending before each development fold. Two global keys (full sequence and compact
+multiscale history) and k=1/4/8 were screened. Eight-neighbor retrieval improved
+normalized weather RMSE from persistence 0.9552 to 0.8262 on rolling development,
+but PM-increment templates worsened MAE from persistence 28.9694 to 31.9072.
+
+After fixing those choices, original validation was used once. Mixtures of real
+training weather continuations fed through the no-lag recurrent operator obtained
+22.1396 PM MAE, 1.5703 worse than V3. Direct PM-increment memory obtained 29.3112,
+8.7419 worse than V3. Thus historical continuation memory is rejected and no
+global/local neural prototype memory is built. The negative outcome activates the
+predeclared adaptive delayed-state retrieval probe. Its architecture attends over
+the 24 historical station states and supplies a separate wind-aligned delayed
+transport innovation; it is selected only on three train-internal rolling folds
+with a >=0.5 MAE advancement gate. Original validation is not revisited unless that
+gate passes, and all tests remain sealed. Full analog results are in
+`artifacts/analog_memory/decision.json`.
+
+The adaptive-delay rolling experiment completed all six paired runs. Fold MAEs for
+V3 versus adaptive delay were 28.9615 vs 29.6398, 14.3430 vs 14.3473, and 25.4789
+vs 25.2771. Mean MAE therefore worsened from 22.9278 to 23.0881 (gain -0.1602),
+well below the +0.5 advancement threshold. Adaptive delayed-state retrieval is
+rejected without revisiting original validation. No three-seed run or test access
+occurred. This closes the historical-memory escalation branch under the current
+protocol; `artifacts/rolling_delay/decision.json` is the decision record.
 
 ## Residuals before and after recurrence
 

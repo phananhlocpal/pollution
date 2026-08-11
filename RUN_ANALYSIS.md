@@ -183,6 +183,28 @@ identification. It failed the <=18 gate, so the wrapper did not launch three see
 or access either test. `artifacts/factorized_v3/decision.json` records the rejected
 branch and the decision not to continue deterministic architecture escalation.
 
+Run the train-only historical analog probe once. It selects the global query and
+neighbor count on three rolling folds, then performs one fixed original-validation
+evaluation without reading any test split:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\probe_analog_memory.py
+```
+
+The probe rejected both real-weather continuations (22.1396 validation PM MAE) and
+PM-increment templates (29.3112). The predeclared fallback is adaptive delayed-state
+retrieval. Its wrapper compares V3 against the adaptive branch on three train-only
+rolling folds and advances only for a mean paired gain of at least 0.5 MAE:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\run_adaptive_delay_probe.py
+```
+
+Completed rolling means were 22.9278 for V3 and 23.0881 for adaptive delay, a
+-0.1602 gain. The branch failed its +0.5 advancement gate, so original validation
+was not revisited and no test was opened. Existing fold summaries are reused when
+the wrapper is rerun after interruption.
+
 The independently retrained validation ablation matrix (three seeds per variant)
 is launched by:
 
