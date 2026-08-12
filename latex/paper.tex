@@ -1,0 +1,758 @@
+\documentclass[10pt,a4paper]{article}
+
+% Biên dịch bằng: latexmk -pdf -interaction=nonstopmode -halt-on-error paper.tex
+\usepackage[utf8]{vntex}
+\usepackage{tgtermes}
+\usepackage[margin=2.15cm]{geometry}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{amsmath,amssymb,mathtools,bm}
+\usepackage{newtxmath}
+\usepackage{booktabs,tabularx,array,multirow,threeparttable,makecell}
+\usepackage{graphicx}
+\usepackage[dvipsnames,table]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc,backgrounds,shapes.geometric}
+\usepackage{pgfplots}
+\usepgfplotslibrary{groupplots}
+\pgfplotsset{compat=1.18}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{natbib}
+\usepackage{fancyhdr}
+\usepackage{url}
+\usepackage{placeins}
+\usepackage{flafter}
+\usepackage{float}
+\usepackage{adjustbox}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{tsblue}{HTML}{2166AC}
+\definecolor{tsorange}{HTML}{D6604D}
+\definecolor{tsteal}{HTML}{1B9E77}
+\definecolor{tspurple}{HTML}{7570B3}
+\definecolor{tsgray}{HTML}{5B6573}
+\definecolor{tslight}{HTML}{EFF3F6}
+\definecolor{tsdark}{HTML}{243447}
+
+\hypersetup{
+  pdftitle={Tiến hóa tuần tự vận chuyển--nguồn có điều kiện khí tượng cho dự báo PM2.5 hạn dài},
+  pdfauthor={Loc Phan},
+  pdfsubject={Dự báo PM2.5 nhiều bước},
+  pdfkeywords={chất lượng không khí, PM2.5, tiến hóa trạng thái, vận chuyển, nguồn và mất mát}
+}
+
+\setstretch{1.06}
+\setlength{\parindent}{1.2em}
+\setlength{\parskip}{0.15em}
+\setlength{\tabcolsep}{5pt}
+\captionsetup{font=small,labelfont=bf,labelsep=period}
+\setlist[itemize]{leftmargin=1.6em,itemsep=0.25em,topsep=0.35em}
+\setlist[enumerate]{leftmargin=1.8em,itemsep=0.3em,topsep=0.35em}
+\renewcommand{\arraystretch}{1.16}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Dự báo PM$_{2.5}$ có điều kiện khí tượng}
+\fancyhead[R]{Bản thảo tiếng Việt}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.35pt}
+
+\newcommand{\pmfine}{PM$_{2.5}$}
+\newcommand{\unitpm}{\,\mu\mathrm{g}\,\mathrm{m}^{-3}}
+\newcommand{\modelname}{TSR}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\meanN}[1]{\overline{#1}}
+\DeclareMathOperator{\MAE}{MAE}
+\DeclareMathOperator{\RMSE}{RMSE}
+\DeclareMathOperator{\sMAPE}{sMAPE}
+
+\title{\vspace{-1.3cm}\bfseries
+Tiến hóa tuần tự vận chuyển--nguồn có điều kiện khí tượng\\
+cho dự báo \pmfine{} hạn dài}
+\author{Loc Phan\\[-0.1em]
+\small Nguyen Tat Thanh University, Vietnam\\}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-1.2em}
+
+\begin{abstract}
+Dự báo \pmfine{} trong 72 giờ không chỉ đòi hỏi nhận ra tương quan không gian--thời gian, mà còn phải mô tả cách trường nồng độ đã dự báo tiếp tục biến đổi ở từng bước kế tiếp. Tuy vậy, nhiều mô hình sinh đồng thời toàn bộ chân trời từ một biểu diễn lịch sử cố định, nên trạng thái dự báo ở giờ trước không trực tiếp trở thành điều kiện của giờ sau. Nghiên cứu này đặt lại bài toán như một quá trình tiến hóa rời rạc và đề xuất toán tử hồi quy vận chuyển--nguồn (\modelname). Ở mỗi bước ba giờ, \modelname{} cộng vào trường \pmfine{} hiện tại hai thành phần: vận chuyển theo gió trên đồ thị tám láng giềng và nguồn/mất mát gồm mức chung toàn vùng cùng độ lệch riêng từng trạm. Thành phần vận chuyển và phần nguồn cục bộ được ép có tổng bằng không trên các trạm; đây là ràng buộc lấy cảm hứng từ bảo toàn, không phải định luật bảo toàn khối lượng tuyệt đối.
+
+Thí nghiệm có kiểm soát trên KnowAir dùng 184 trạm, lịch sử 72 giờ, chân trời 72 giờ, chia thời gian 50/25/25 và ba hạt giống ngẫu nhiên. Trong thiết lập chẩn đoán chính, cả \modelname{} và đối chứng đều nhận khí tượng đã quan trắc trong 72 giờ đích; các biến thể nhân quả chỉ dùng lịch sử được đánh giá riêng. Trên tập xác thực, đặc tả rút gọn không có nhánh trễ đạt MAE $16.7630\pm0.0252$, trong khi mô hình dự báo trực tiếp gần bằng số tham số đạt $18.8620\pm0.0457$. Khi huấn luyện lại độc lập, bỏ nguồn/mất mát làm MAE tăng $3.6224$, còn bỏ vận chuyển làm tăng $0.5132$. Bỏ nhánh vận chuyển trễ một bước không làm giảm chất lượng ($-0.0038$ MAE), cho thấy tiến hóa hồi quy đã hấp thụ phần ký ức ngắn hạn hữu ích của nhánh này. Các thử nghiệm chỉ dùng lịch sử dừng quanh MAE $20.5$--$20.9$, gợi ý rằng bất định của tác động ngoại sinh tương lai là một nút thắt lớn trong họ mô hình được khảo sát. Kết quả ủng hộ một kết luận có phạm vi rõ: trên KnowAir và dưới điều kiện khí tượng đích đã hiện thực hóa, cấu trúc tiến hóa tuần tự và động lực nguồn/mất mát quan trọng hơn việc chỉ tăng dung lượng mô hình hay bổ sung cơ chế trễ một bước.
+\end{abstract}
+
+\noindent\textbf{Từ khóa:} \pmfine; dự báo có điều kiện khí tượng; dự báo nhiều bước; tiến hóa trạng thái; đồ thị theo gió; nguồn và mất mát.
+
+\section{Đặt vấn đề}
+
+Một dự báo ba giờ và một dự báo ba ngày có thể dùng cùng dữ liệu đầu vào, nhưng không phải cùng một bài toán. Ở chân trời ngắn, mô hình chủ yếu nội suy quán tính gần nhất của nồng độ và khí tượng. Khi chân trời kéo dài, mỗi sai lệch ở trạng thái trung gian lại làm đổi điều kiện ban đầu của bước sau. Nếu toàn bộ 24 mốc tương lai được sinh trực tiếp từ một biểu diễn lịch sử cố định, mối liên hệ này chỉ tồn tại ngầm trong tham số, chứ không được thể hiện như một quy luật chuyển trạng thái.
+
+Các mạng đồ thị đã cải thiện dự báo không khí bằng cách mô tả quan hệ giữa trạm, từ đồ thị tích chập kết hợp bộ nhớ dài--ngắn hạn \citep{qi2019gclstm}, đồ thị có tri thức miền trên KnowAir \citep{wang2020pm25gnn}, đến cấu trúc phân cấp và phụ thuộc xa \citep{xu2021highair,chen2021gagnn}. Gần đây, AirFormer dùng chú ý không gian--thời gian và biến ẩn để mô tả bất định trên quy mô quốc gia \citep{liang2023airformer}. Những tiến bộ này rất quan trọng, nhưng chúng chưa tự trả lời một câu hỏi cơ chế: \emph{việc bắt buộc trường ô nhiễm tiến hóa tuần tự có tạo lợi ích riêng ở chân trời dài hay không?}
+
+Các mô hình có định hướng vật lý tiếp cận câu hỏi từ phương trình khuếch tán--bình lưu. Có công trình đưa phương trình phân tán vào hàm mất mát \citep{zhou2022theory}, có công trình dùng phương trình vi phân nơ-ron để biểu diễn khuếch tán và bình lưu \citep{hettige2024airphynet}, hoặc tách nhánh động lực vật lý và nhánh học từ dữ liệu trong một hệ mở \citep{tian2025airdualode}. AirDDE tiến thêm một bước khi mô hình hóa độ trễ lan truyền bằng phương trình vi phân có trễ, bộ nhớ toàn cục/cục bộ và hàm tiến hóa gồm khuếch tán, bình lưu trễ, nguồn/mất mát \citep{wu2026airdde}. Nghiên cứu của chúng tôi không tìm cách thay thế cách mô tả liên tục đó. Thay vào đó, đây là một nghiên cứu cơ chế có điều kiện: chúng tôi kiểm tra xem phép tiến hóa rời rạc, được phân rã tối giản thành vận chuyển và nguồn/mất mát, đã đủ để giải thích phần lớn mức cải thiện ở dự báo dài trên KnowAir hay chưa. Phạm vi này không đồng nghĩa với một hệ thống dự báo vận hành độc lập với khí tượng tương lai.
+
+Ý tưởng trung tâm được viết gọn như sau:
+\begin{equation}
+  \widehat{\bm{x}}_{k+1}
+  = \widehat{\bm{x}}_{k}
+  + \bm{T}_{\theta}(\widehat{\bm{x}}_{k},\bm{m}_{k},\mathcal{G})
+  + \bm{S}_{\phi}(\widehat{\bm{x}}_{k},\bm{m}_{k}),
+  \label{eq:central}
+\end{equation}
+trong đó $\bm{T}_{\theta}$ tái phân bố nồng độ giữa các trạm, còn $\bm{S}_{\phi}$ biểu diễn tích tụ hoặc suy giảm không bảo toàn trong miền quan sát. Cách viết này không khẳng định đã nhận dạng đúng từng quá trình hóa học. Giá trị của nó nằm ở chỗ tạo ra các giả thuyết có thể bác bỏ bằng thí nghiệm loại bỏ thành phần: nếu tiến hóa tuần tự không cần thiết, mô hình trực tiếp cùng dung lượng phải đạt kết quả tương đương; nếu nguồn/mất mát không quan trọng, loại bỏ thành phần này không được gây suy giảm lớn.
+
+Nghiên cứu có bốn đóng góp:
+\begin{enumerate}
+  \item Đề xuất một công thức hồi quy vận chuyển--nguồn cho dự báo \pmfine{} nhiều bước, trong đó trường dự báo ở mỗi bước trở thành trạng thái đầu vào của bước kế tiếp.
+  \item Xây dựng phân rã có diễn giải giữa vận chuyển tổng bằng không trên các trạm và nguồn/mất mát gồm thành phần chung cùng thành phần cục bộ tổng bằng không.
+  \item Chứng minh bằng huấn luyện lại với ba hạt giống rằng lợi ích không thể quy đơn thuần cho số tham số: mô hình trực tiếp $72{,}630$ tham số kém toán tử hồi quy $72{,}659$ tham số $2.0952$ MAE trên tập xác thực.
+  \item Phân định rõ tập thông tin và xuất xứ kết quả: mô hình chuẩn có trễ cung cấp các mốc kiểm tra đã đóng băng, còn đặc tả rút gọn không trễ chỉ được kết luận từ thí nghiệm xác thực có kiểm soát; cả hai dùng khí tượng đã quan trắc trong giai đoạn đích.
+\end{enumerate}
+
+\section{Công trình liên quan}
+
+\subsection{Dự báo không gian--thời gian trên mạng trạm}
+
+Mạng quan trắc chất lượng không khí tạo ra chuỗi đa biến trên một tập vị trí không đều. Vì vậy, đồ thị là biểu diễn tự nhiên hơn lưới đều: đỉnh là trạm, cạnh có thể dựa trên khoảng cách, tương quan hoặc hướng gió. Trong dự báo không gian--thời gian nói chung, DCRNN lan truyền tín hiệu theo khuếch tán trên đồ thị, STGCN và ASTGCN dùng tích chập không gian--thời gian, còn MTGNN học quan hệ giữa các chuỗi thay vì cố định đồ thị trước \citep{li2018dcrnn,yu2018stgcn,guo2019astgcn,wu2020mtgnn}. MegaCRN và HimNet tiếp tục đưa bộ nhớ nguyên mẫu và tham số thích nghi theo dị thể vào dự báo nhiều bước \citep{jiang2023megacrn,dong2024himnet}. Các kiến trúc này là đối chứng quan trọng trong công bố AirDDE, nhưng bản thân điểm số của chúng không trả lời liệu trạng thái ô nhiễm dự báo có cần được tiến hóa theo một phép chuyển có cấu trúc hay không.
+
+Trong chất lượng không khí, GC-LSTM kết hợp tích chập đồ thị với bộ nhớ dài--ngắn hạn để học phụ thuộc không gian và thời gian \citep{qi2019gclstm}. PM2.5-GNN đưa tri thức miền về khoảng cách, địa hình và khí tượng vào đồ thị, đồng thời giới thiệu bộ dữ liệu KnowAir gồm 184 thành phố \citep{wang2020pm25gnn}. HighAir tổ chức đồ thị theo cấp thành phố và trạm, còn GAGNN học nhóm thành phố để mở rộng tầm phụ thuộc \citep{xu2021highair,chen2021gagnn}.
+
+Một hướng khác dùng cơ chế chú ý để tránh giới hạn trường tiếp nhận của truyền thông điệp. Crossformer khai thác phụ thuộc chéo giữa các chiều, PDFormer biểu diễn độ trễ lan truyền, còn iTransformer đảo vai trò của biến và thời gian trong cơ chế chú ý \citep{zhang2023crossformer,jiang2023pdformer,liu2024itransformer}. STMFormer bổ sung học tự giám sát cho quan hệ không gian--thời gian \citep{li2025stmformer}. Riêng AirFormer tách tầng dự báo xác định và tầng bất định, đồng thời thiết kế chú ý không gian dạng bia tiêu cho mạng trạm quy mô lớn \citep{liang2023airformer}. Điểm chung của nhóm này là làm giàu biểu diễn quan hệ; bài báo hiện tại bổ sung một trục khác, trong đó trạng thái dự báo được cập nhật tuần tự bằng một toán tử có cấu trúc.
+
+\subsection{Động lực có định hướng vật lý}
+
+Trong khí quyển, nồng độ quan trắc chịu đồng thời bình lưu, khuếch tán, phát thải, lắng đọng, phản ứng và trao đổi qua biên \citep{seinfeld2016atmospheric}. Mô hình học máy khó nhận dạng riêng từng quá trình khi chỉ có nồng độ tại trạm và một số biến khí tượng. Vì vậy, chúng tôi dùng từ \emph{có cấu trúc vật lý} thay vì \emph{mô phỏng vật lý chính xác}.
+
+Các nghiên cứu gần đây đã đưa phương trình vào mạng theo nhiều mức. STGODE và SGODE mô hình hóa động lực đồ thị liên tục bằng phương trình vi phân thường; STG-NCDE dùng phương trình vi phân có điều khiển, còn STDDE đưa độ trễ vào động lực không gian--thời gian \citep{fang2021stgode,chen2024sgode,choi2022stgncde,long2024stdde}. Trong chất lượng không khí, Zhou và cộng sự dùng phương trình bình lưu--khuếch tán như ràng buộc huấn luyện \citep{zhou2022theory}. AirPhyNet biểu diễn khuếch tán và bình lưu bằng mạng phương trình vi phân \citep{hettige2024airphynet}; Air-DualODE xem miền không khí như hệ mở và kết hợp nhánh động lực vật lý với nhánh bù học từ dữ liệu \citep{tian2025airdualode}. Các cách tiếp cận này dựa trên nền tảng phương trình vi phân nơ-ron \citep{chen2018neuralode}. Phương pháp của chúng tôi dùng bước thời gian đúng bằng nhịp dữ liệu ba giờ, tránh bộ giải số liên tục và tập trung vào kiểm chứng vai trò của phân rã vận chuyển--nguồn.
+
+\subsection{Độ trễ và tác động ngoại sinh tương lai}
+
+Phương trình vi phân nơ-ron có trễ cho phép đạo hàm hiện tại phụ thuộc vào trạng thái quá khứ, nên có khả năng biểu diễn động lực mà phương trình vi phân thường khó mô tả trong cùng không gian trạng thái \citep{zhu2021ndde}. AirDDE áp dụng ý tưởng này vào chất lượng không khí bằng bộ nhớ tăng cường chú ý và đồ thị bình lưu có trễ \citep{wu2026airdde}. Khác biệt nghiên cứu ở đây là có chủ ý: chúng tôi hỏi liệu nhánh trễ tường minh còn cung cấp thông tin khi bản thân trường \pmfine{} đã được cuộn tiến từng bước hay không. Thí nghiệm loại bỏ thành phần cho thấy câu trả lời là không trong giao thức KnowAir đang xét.
+
+Một khác biệt khác nằm ở tập thông tin. Một số phương pháp dùng dự báo khí tượng cho giai đoạn đích \citep{xu2021highair}; công thức AirDDE dùng nồng độ và yếu tố phụ trợ đến thời điểm hiện tại \citep{wu2026airdde}. Cấu hình mạnh nhất của chúng tôi dùng giá trị khí tượng đã quan trắc ở giai đoạn cần dự báo. Hai bài toán vì thế không đồng nhất. Chúng tôi đưa khác biệt này vào phát biểu bài toán, bảng kết quả và phần hạn chế, thay vì để nó ẩn trong chi tiết cài đặt.
+
+\begin{table}[t]
+  \centering
+  \caption{Định vị cấu trúc của một số phương pháp gần nhất. Bảng mô tả cách xây dựng mô hình, không phải bảng xếp hạng và không hàm ý các giao thức đầu vào giống nhau.}
+  \label{tab:method-positioning}
+  \scriptsize
+  \begin{tabularx}{\textwidth}{@{}p{1.45cm}p{1.7cm}p{2.05cm}Xp{1.45cm}p{1.7cm}@{}}
+    \toprule
+    Phương pháp & Dạng tiến hóa & Quan hệ không gian & Phân rã động lực & Trễ tường minh & Khí tượng trong công thức dự báo \\
+    \midrule
+    PM2.5-GNN & Rời rạc, dựa trên bộ mã hóa & Đồ thị có tri thức miền & Không tách vận chuyển và nguồn/mất mát & Không & Theo giao thức bài gốc \\
+    AirFormer & Dự báo bằng bộ biến đổi & Chú ý không gian dạng bia tiêu & Không tách theo quá trình vật lý & Không & Theo giao thức bài gốc \\
+    AirPhyNet & Liên tục & Đồ thị trạm & Khuếch tán và bình lưu & Không & Theo giao thức bài gốc \\
+    Air-DualODE & Hai hệ liên tục & Đồ thị trạm & Nhánh vật lý và nhánh bù dữ liệu & Không & Theo giao thức bài gốc \\
+    AirDDE & Liên tục có trễ & Khoảng cách và trường gió & Khuếch tán, bình lưu và nguồn/mất mát & Có, thích nghi theo dữ liệu & Chỉ lịch sử trong công thức bài gốc \\
+    \modelname{} & Rời rạc, hồi quy & Đồ thị tám láng giềng theo gió & Vận chuyển tổng bằng không và nguồn/mất mát & Một bước trong mô hình chuẩn; bỏ ở đặc tả rút gọn & Khí tượng đích đã quan trắc \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\section{Phát biểu bài toán và tập thông tin}
+
+Giả sử có $N$ trạm. Tại thời điểm $t$, $\bm{x}_{t}\in\R^{N}$ là nồng độ \pmfine{} và $\bm{m}_{t}\in\R^{N\times d_m}$ là khí tượng. Với lịch sử dài $L$ và chân trời $H$, mục tiêu là
+\begin{equation}
+  \widehat{\bm{X}}_{t+1:t+H}
+  = F_{\Theta}\!\left(
+      \bm{X}_{t-L+1:t},
+      \bm{M}_{t-L+1:t},
+      \mathcal{I}_{\text{ngoại sinh}}
+    \right),
+  \label{eq:problem}
+\end{equation}
+với $\widehat{\bm{X}}_{t+1:t+H}\in\R^{H\times N}$. Hai tập thông tin phải được phân biệt:
+\begin{align}
+  \mathcal{I}_{\mathrm{ls}}
+  &= \{\bm{X}_{t-L+1:t},\bm{M}_{t-L+1:t}\},
+  \label{eq:history-info}\\
+  \mathcal{I}_{\mathrm{ht}}
+  &= \mathcal{I}_{\mathrm{ls}}\cup\{\bm{M}_{t+1:t+H}\}.
+  \label{eq:realized-info}
+\end{align}
+Ký hiệu ``ls'' chỉ lịch sử; ``ht'' chỉ thông tin khí tượng đã hiện thực hóa trong giai đoạn đích. Kết quả chính của phương pháp dùng $\mathcal{I}_{\mathrm{ht}}$. Do đó, nó đo chất lượng dự báo \pmfine{} có điều kiện trên quỹ đạo khí tượng đúng, gần với một giới hạn trên chẩn đoán hơn là một hệ thống vận hành hoàn toàn nhân quả. Các thí nghiệm chỉ dùng $\mathcal{I}_{\mathrm{ls}}$ được báo cáo riêng như phép chẩn đoán nút thắt.
+
+\begin{table}[t]
+  \centering
+  \caption{Ký hiệu chính. ``Trung bình trạm'' luôn là trung bình số học trên $N$ vị trí, không phải trung bình theo diện tích hay khối lượng không khí.}
+  \label{tab:notation}
+  \begin{tabularx}{\textwidth}{@{}lX@{}}
+    \toprule
+    Ký hiệu & Ý nghĩa \\
+    \midrule
+    $N,L,H$ & Số trạm, số bước lịch sử và số bước dự báo. Trong KnowAir: $184,24,24$. \\
+    $\bm{x}_{t}$ & Trường nồng độ \pmfine{} tại một thời điểm, kích thước $N$. \\
+    $\bm{m}_{t}$ & Sáu biến khí tượng lõi tại các trạm: nhiệt độ, áp suất, độ ẩm tương đối, tốc độ gió, sin và cos của hướng gió. \\
+    $\mathcal{G}$ & Đồ thị tám láng giềng gần nhất, trọng số nền suy giảm theo khoảng cách. \\
+    $\bm{T}_{k}$ & Gia số vận chuyển ở bước $k$, thỏa $\sum_i T_{i,k}=0$. \\
+    $\bm{S}_{k}$ & Gia số nguồn/mất mát, gồm mức chung $S_k^g$ và độ lệch cục bộ $S_{i,k}^{\ell}$. \\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\section{Phương pháp}
+
+\subsection{Tổng quan}
+
+Hình~\ref{fig:architecture} cho thấy toàn bộ luồng tính toán. Hai bộ mã hóa có cổng hồi quy (GRU) \citep{cho2014gru} tóm tắt 72 giờ lịch sử ở hai thang: mức trung bình toàn mạng và phần lệch của từng trạm. Từ trạng thái \pmfine{} cuối lịch sử, mô hình lặp 24 lần. Mỗi lần, khí tượng ở bước tương ứng điều khiển trọng số theo gió và các ô hồi quy; hai đầu ra vận chuyển và nguồn/mất mát được cộng vào trạng thái hiện tại.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}[
+    x=1cm,y=1cm,
+    font=\footnotesize,
+    >=Latex,
+    block/.style={draw=tsdark, rounded corners=1.5pt, line width=0.7pt,
+      align=center, minimum height=9mm, inner sep=3pt, fill=white},
+    input/.style={block, fill=tslight, text width=1.45cm},
+    latent/.style={block, fill=tsblue!8, text width=1.35cm},
+    process/.style={block, fill=tsteal!7, text width=1.65cm},
+    transport/.style={block, fill=tsblue!9, text width=1.70cm},
+    source/.style={block, fill=tsorange!9, text width=1.70cm},
+    update/.style={block, fill=tspurple!8, text width=2.15cm,
+      minimum height=12mm},
+    arr/.style={-{Latex[length=2.1mm,width=1.4mm]}, line width=0.75pt,
+      draw=tsdark},
+    recur/.style={arr, dashed, draw=tsteal},
+    optional/.style={arr, densely dotted, draw=tsgray},
+    note/.style={font=\scriptsize, text=tsgray, align=center},
+    paneltitle/.style={font=\footnotesize\bfseries, text=tsdark, anchor=west}
+  ]
+    \begin{scope}[on background layer]
+      \filldraw[fill=tslight!22,draw=tsgray!55,line width=0.6pt,rounded corners=2pt]
+        (-0.10,0.10) rectangle (6.05,5.35);
+      \filldraw[fill=tslight!12,draw=tsgray!55,line width=0.6pt,rounded corners=2pt]
+        (6.25,0.10) rectangle (16.45,5.35);
+    \end{scope}
+
+    \node[paneltitle] at (0.15,5.05) {(a) Khởi tạo từ lịch sử};
+    \node[paneltitle] at (6.50,5.05) {(b) Toán tử tiến hóa tại bước $k$ (3 giờ)};
+
+    \node[input] (history) at (0.80,2.75)
+      {72 giờ lịch sử\\$\bm X$, $\bm M$};
+    \node[process,text width=1.20cm] (decompose) at (2.20,2.75)
+      {Phân rã\\$\bar{x}_{\tau},r_{i,\tau}$};
+    \node[latent] (grug) at (3.70,3.55)
+      {GRU\\mức chung};
+    \node[latent] (grul) at (3.70,1.95)
+      {GRU\\mức cục bộ};
+    \node[block,fill=tspurple!8,text width=1.35cm] (initial) at (5.25,2.75)
+      {Khởi tạo\\$\bm h_0^g,\bm h_{i,0}^{\ell}$\\$\widehat{\bm x}_0=\bm x_t$};
+
+    \draw[arr] (history) -- (decompose);
+    \draw[arr] (decompose.east) -- (grug.west);
+    \draw[arr] (decompose.east) -- (grul.west);
+    \draw[arr] (grug.east) -- (initial.north west);
+    \draw[arr] (grul.east) -- (initial.south west);
+
+    \node[block,fill=white,text width=1.55cm,minimum height=15mm] (condition) at (7.25,2.55)
+      {Trạng thái bước $k$\\$\widehat{\bm x}_k$\\$\bm h_{k-1}^g,\bm h_{i,k-1}^{\ell}$};
+    \node[input,text width=1.70cm,minimum height=8mm] (meteo) at (7.55,4.30)
+      {Khí tượng đích\\$\bm m_{t+k}$};
+    \node[transport,text width=2.35cm,minimum height=13mm] (transop) at (10.25,3.55)
+      {\textbf{Vận chuyển theo gió}\\
+       đổi mới $q_{i,k}$ và GRU cục bộ\\[-1pt]
+       $\bm T_k$; \scriptsize$\sum_iT_{i,k}=0$};
+    \node[source,text width=2.35cm,minimum height=13mm] (sourceop) at (10.25,1.55)
+      {\textbf{Nguồn/mất mát}\\
+       GRU mức chung và cục bộ\\[-1pt]
+       $\bm S_k=S_k^g+\bm S_k^{\ell}$\\[-2pt]
+       \scriptsize$\sum_iS_{i,k}^{\ell}=0$};
+    \node[update,text width=2.80cm,minimum height=16mm] (stateupdate) at (14.20,2.55)
+      {Trạng thái kế\\[-1pt]
+       {\normalsize$\widehat{\bm x}_{k+1}=$}\\[-2pt]
+       {\normalsize$\widehat{\bm x}_k+\bm T_k+\bm S_k$}};
+
+    \draw[arr] (initial) -- node[note,above] {$k=0$} (condition);
+    \draw[arr] (condition.north east) -- (transop.west);
+    \draw[arr] (condition.south east) -- (sourceop.west);
+    \draw[arr] (meteo.east) -- (transop.north west);
+    \draw[arr] (meteo.south) -- ++(0,-0.22) -| (sourceop.north west);
+    \draw[arr] (transop.east) -- (stateupdate.north west);
+    \draw[arr] (sourceop.east) -- (stateupdate.south west);
+
+    \draw[recur] (stateupdate.south east) -- (15.45,0.38) --
+      node[note,below,pos=0.52] {cuộn tiến hồi quy, $H=24$ bước}
+      (6.45,0.38) -- (6.45,1.45) -- (condition.south west);
+
+    \node[block,draw=tsgray,fill=white,text=tsgray,text width=1.30cm,
+      minimum height=7mm,font=\scriptsize] (lag) at (12.15,4.58)
+      {$\widehat{\bm x}_{k-1}$\\chỉ mô hình chuẩn};
+    \draw[optional] (lag.south west) -- (transop.north east);
+  \end{tikzpicture}
+  \caption{Kiến trúc TSR. (a) Lịch sử được phân rã thành mức chung và phần lệch cục bộ để khởi tạo hai trạng thái ẩn. (b) Khí tượng đã hiện thực hóa ở bước đích $k$ được đưa vào tường minh; đổi mới theo gió và các trạng thái GRU sinh gia số vận chuyển $\bm T_k$ và nguồn/mất mát $\bm S_k$. Phương trình cập nhật là điểm cuối của mỗi bước ba giờ và đầu vào của bước kế tiếp. Đường chấm màu xám biểu thị nhánh trễ chỉ có trong mô hình chuẩn đã đóng băng.}
+  \label{fig:architecture}
+\end{figure}
+
+\subsection{Mã hóa mức chung và mức cục bộ}
+
+Với lịch sử $\bm{x}_{t-L+1:t}$, ta tách
+\begin{equation}
+  \bar{x}_{\tau}=\frac{1}{N}\sum_{i=1}^{N}x_{i,\tau},
+  \qquad
+  r_{i,\tau}=x_{i,\tau}-\bar{x}_{\tau}.
+  \label{eq:common-local}
+\end{equation}
+Một GRU dùng chuỗi $\bar{x}_{\tau}$ cùng khí tượng trung bình trạm để tạo trạng thái ẩn chung $\bm{h}^{g}_0$. GRU thứ hai dùng $r_{i,\tau}$ và khí tượng tại trạm để tạo $\bm{h}^{\ell}_{i,0}$. Các tham số GRU cục bộ được dùng chung giữa mọi trạm; một véc-tơ nhúng trạm tám chiều giữ lại khác biệt vị trí. Sự phân tách này giúp đầu nguồn/mất mát biểu diễn riêng thay đổi nền toàn vùng và sai lệch tại chỗ.
+
+\subsection{Đồ thị và đổi mới theo gió}
+
+Mỗi trạm $i$ nối với tám trạm gần nhất. Với khoảng cách cung lớn $d_{ij}$, trọng số nền là
+\begin{equation}
+  w^{0}_{ij}\propto\exp\!\left(-\frac{d_{ij}}{250\ \mathrm{km}}\right).
+  \label{eq:base-weight}
+\end{equation}
+Gọi $\bm{b}_{j\rightarrow i}$ là véc-tơ đơn vị từ $j$ đến $i$, và $\bm{v}_{j,k}$ là hướng chuyển động của khối khí tại $j$. Trọng số theo gió được xác định bởi
+\begin{equation}
+  a_{ij,k}
+  = \frac{w^{0}_{ij}\,[\bm{b}_{j\rightarrow i}^{\mathsf T}\bm{v}_{j,k}]_+}
+  {\sum_{q\in\mathcal{N}(i)}w^{0}_{iq}\,[\bm{b}_{q\rightarrow i}^{\mathsf T}\bm{v}_{q,k}]_+},
+  \label{eq:wind-weight}
+\end{equation}
+trong đó $[z]_+=\max(z,0)$. Nếu mọi tích vô hướng đều bằng không, mô hình quay về trọng số khoảng cách đã chuẩn hóa. Đổi mới không gian tại trạm $i$ là
+\begin{equation}
+  q_{i,k}=\sum_{j\in\mathcal{N}(i)}a_{ij,k}\widehat{x}_{j,k}-\widehat{x}_{i,k}.
+  \label{eq:innovation}
+\end{equation}
+Đầu vận chuyển nhận $q_{i,k}$, tốc độ gió và trạng thái ẩn cục bộ, rồi tạo gia số bị chặn bằng hàm $\tanh$. Sau cùng, trung bình trạm được trừ đi:
+\begin{equation}
+  \widetilde{T}_{i,k}=c\tanh f_{\theta}(\bm{h}^{\ell}_{i,k},q_{i,k},v_{i,k}),
+  \qquad
+  T_{i,k}=\widetilde{T}_{i,k}-\frac{1}{N}\sum_j\widetilde{T}_{j,k},
+  \label{eq:transport}
+\end{equation}
+với $c=0.5$ theo đơn vị mục tiêu đã chuẩn hóa. Như vậy $\sum_iT_{i,k}=0$. Điều kiện này chỉ nói toán tử không tự nâng hoặc hạ trung bình số học trên mạng trạm; nó không bảo toàn khối lượng vì các trạm không đại diện cho những thể tích khí bằng nhau.
+
+\subsection{Nguồn/mất mát chung và cục bộ}
+
+Khối nguồn/mất mát được phân rã:
+\begin{equation}
+  S_{i,k}=S^{g}_{k}+S^{\ell}_{i,k},
+  \qquad
+  \sum_{i=1}^{N}S^{\ell}_{i,k}=0.
+  \label{eq:source}
+\end{equation}
+Trạng thái ẩn chung được cập nhật bằng trung bình \pmfine{} hiện tại và khí tượng trung bình mạng. Đầu chung sinh $S^g_k$, có thể làm tăng hoặc giảm mức nền toàn vùng. Trạng thái ẩn cục bộ nhận phần dư $\widehat{x}_{i,k}-\meanN{x}_k$, khí tượng trạm, đổi mới theo gió và véc-tơ nhúng trạm. Đầu cục bộ sinh $\widetilde{S}^{\ell}_{i,k}$; trừ trung bình trạm cho kết quả $S^{\ell}_{i,k}$. Mỗi đầu dùng hai lớp tuyến tính với kích hoạt GELU và đầu ra $\tanh$ bị chặn. Trạng thái kế tiếp tuân theo Phương trình~\eqref{eq:central}.
+
+Tên ``nguồn/mất mát'' ở đây là định nghĩa vận hành: phần biến đổi nồng độ không được gán cho tái phân bố không gian tổng bằng không. Nó có thể gộp phát thải, lắng đọng, phản ứng, pha loãng lớp biên, trao đổi qua biên miền và cả sai số mô hình chưa phân giải. Vì dữ liệu không chứa kiểm kê phát thải đầy đủ, chúng tôi không diễn giải $\bm{S}$ như phép đo trực tiếp một quá trình hóa học riêng lẻ.
+
+\subsection{Hàm mục tiêu}
+
+Mọi sai số được tính trên các điểm có nồng độ thật ít nhất $10^{-4}\unitpm$. Gọi $\ell_1$ là MAE có mặt nạ, $\bar{\bm{y}}$ là trung bình trạm, $\bm{y}'=\bm{y}-\bar{\bm{y}}$, và $\Delta\bm{y}$ là gia số theo thời gian. Hàm mất mát là
+\begin{equation}
+  \mathcal{L}
+  = \ell_1(\widehat{\bm{y}},\bm{y})
+  +0.25\,\ell_1(\meanN{\widehat{\bm{y}}},\meanN{\bm{y}})
+  +0.25\,\ell_1(\widehat{\bm{y}}',\bm{y}')
+  +0.10\,\ell_1(\Delta\widehat{\bm{y}},\Delta\bm{y}).
+  \label{eq:loss}
+\end{equation}
+Hai hạng giữa giữ cân bằng giữa nền vùng và cấu trúc cục bộ; hạng cuối khuyến khích quỹ đạo có gia số đúng thay vì chỉ khớp từng mốc độc lập.
+
+\section{Thiết kế thực nghiệm}
+
+\subsection{Dữ liệu và chia tập}
+
+KnowAir bao phủ 184 thành phố của Trung Quốc từ ngày 1/1/2015 đến 31/12/2018, nhịp ba giờ, gồm \pmfine{} và 17 thuộc tính khí tượng \citep{wang2020pm25gnn}. Mảng phát hành có kích thước $11{,}688\times184\times18$. Nghiên cứu dùng \pmfine{} làm mục tiêu và sáu kênh khí tượng lõi: nhiệt độ 2~m, áp suất bề mặt, độ ẩm tương đối ở 950~hPa, tốc độ gió 100~m, sin và cos của hướng gió 100~m. Biểu diễn tròn bằng sin/cos tránh điểm gián đoạn giữa $0^{\circ}$ và $360^{\circ}$.
+
+Dữ liệu được chia theo thời gian 50/25/25, tương ứng 5.844/2.922/2.922 bước. Cửa sổ không đi qua ranh giới tập. Sau khi dành 24 bước lịch sử và 24 bước đích, số cửa sổ huấn luyện/xác thực/kiểm tra là 5.797/2.875/2.875. Trung bình và độ lệch chuẩn của từng kênh được ước lượng chỉ trên nửa huấn luyện, gộp thời gian và trạm, rồi áp dụng cho các tập sau.
+
+\begin{table}[t]
+  \centering
+  \caption{Giao thức KnowAir. Tập kiểm tra không được dùng để chọn siêu tham số trong ma trận thí nghiệm loại bỏ đã huấn luyện lại.}
+  \label{tab:protocol}
+  \begin{threeparttable}
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    Thuộc tính & Giá trị \\
+    \midrule
+    Mục tiêu & \pmfine{} tại 184 trạm \\
+    Khoảng thời gian & 1/1/2015--31/12/2018 \\
+    Nhịp lấy mẫu & 3 giờ \\
+    Lịch sử $L$ / chân trời $H$ & 24 / 24 bước (72 / 72 giờ) \\
+    Chia thời gian & 50\% huấn luyện, 25\% xác thực, 25\% kiểm tra \\
+    Cửa sổ hợp lệ & 5.797 / 2.875 / 2.875 \\
+    Khí tượng giai đoạn đích & Giá trị đã quan trắc; phải công bố khi so sánh \\
+    Chuẩn hóa & Thống kê chỉ từ tập huấn luyện \\
+    Hạt giống & 42, 43, 44 \\
+    \bottomrule
+  \end{tabular}
+  \end{threeparttable}
+\end{table}
+
+\subsection{Mô hình đối chứng và thí nghiệm loại bỏ thành phần}
+
+Đối chứng chính là bộ dự báo trực tiếp mức chung/cục bộ. Mô hình mã hóa cùng lịch sử và sinh gia số cho cả 24 chân trời từ biểu diễn cố định; dự báo tại bước $k$ không được đưa lại làm đầu vào của bước $k+1$. Đối chứng trực tiếp và \modelname{} nhận đúng cùng lịch sử \pmfine, cùng sáu biến khí tượng lịch sử và cùng trường khí tượng đã quan trắc trong 24 bước đích. Khác biệt về tập thông tin vì thế không thể giải thích chênh lệch giữa hai mô hình. Kích thước ẩn, nhúng chân trời và nhúng trạm được tăng để đối chứng có 72.630 tham số, gần bằng 72.659 tham số của \modelname. So sánh này kiểm soát chặt số tham số và tập thông tin, qua đó giảm đáng kể khả năng chênh lệch được giải thích bởi dung lượng hay lợi thế đầu vào. Tuy nhiên, nó không loại bỏ hoàn toàn khác biệt tối ưu hóa vì tốc độ học được ấn định riêng cho từng kiến trúc.
+
+Bốn biến thể của \modelname{} được huấn luyện lại độc lập cho từng hạt giống: đầy đủ có nhánh vận chuyển trễ một bước; bỏ vận chuyển; bỏ nguồn/mất mát; và bỏ nhánh trễ. Tất cả giữ nguyên số tham số đã khai báo để tránh biến phép loại bỏ thành kiểm tra dung lượng. Trong bài báo, kiến trúc có trễ được gọi là \emph{mô hình chuẩn đã đóng băng} vì các điểm kiểm tra của nó cung cấp kết quả kiểm tra hiện có. Biến thể không trễ được gọi là \emph{đặc tả rút gọn}: nó đơn giản hơn về cơ chế và không kém trên tập xác thực, nhưng không được gán kết quả kiểm tra của mô hình chuẩn.
+
+\subsection{Huấn luyện và chỉ số}
+
+Mỗi mô hình được huấn luyện tối đa 30 vòng bằng AdamW \citep{loshchilov2019adamw}, suy giảm trọng số $10^{-5}$, cỡ lô 256 và cắt chuẩn đạo hàm ở 5. Tốc độ học ban đầu là $10^{-3}$ cho các biến thể \modelname{} và $3\times10^{-3}$ cho đối chứng trực tiếp khớp dung lượng. Tốc độ học giảm một nửa khi MAE xác thực ngừng cải thiện; huấn luyện dừng sớm sau sáu vòng không cải thiện. Điểm kiểm tra mô hình có MAE xác thực thấp nhất được giữ. Không có siêu tham số nào trong ma trận chính được chọn trên tập kiểm tra.
+
+Với $P$ điểm hợp lệ, các chỉ số là
+\begin{align}
+  \MAE &= \frac{1}{P}\sum_{p=1}^{P}|y_p-\widehat{y}_p|,\\
+  \RMSE &= \sqrt{\frac{1}{P}\sum_{p=1}^{P}(y_p-\widehat{y}_p)^2},\\
+  \sMAPE &= \frac{1}{Q}\sum_{q=1}^{Q}
+  \frac{|y_q-\widehat{y}_q|}{(|y_q|+|\widehat{y}_q|)/2+10^{-8}}.
+\end{align}
+MAE và RMSE dùng mặt nạ điểm thật khác không; sMAPE ``chính thức'' dùng toàn bộ $Q$ điểm để tương thích mốc công bố AirDDE. MAE là chỉ số chọn mô hình. Chúng tôi báo trung bình $\pm$ độ lệch chuẩn mẫu qua ba hạt giống và tránh dùng từ ``có ý nghĩa thống kê'' khi chưa có kiểm định ghép cặp theo khối thời gian.
+
+\section{Kết quả}
+
+\subsection{Tiến hóa tuần tự so với dự báo trực tiếp}
+
+Bảng~\ref{tab:main-validation} là phép so sánh trung tâm, hoàn toàn trên tập xác thực. Toán tử hồi quy đầy đủ giảm MAE từ $18.8620$ xuống $16.7668$ so với đối chứng trực tiếp gần bằng số tham số. Đặc tả rút gọn không trễ đạt $16.7630$, thấp hơn $0.0038$ MAE so với cấu hình đầy đủ; chênh lệch này quá nhỏ để gán lợi ích cho nhánh trễ một bước. Kết quả biện minh cho phép đơn giản hóa cơ chế, nhưng không thay đổi danh tính của mô hình chuẩn dùng trong bảng kiểm tra.
+
+\begin{table}[t]
+  \centering
+  \caption{Kết quả xác thực KnowAir qua ba hạt giống. Đơn vị MAE là $\unitpm$. Dấu $\Delta$ so với cấu hình hồi quy đầy đủ có nhánh trễ.}
+  \label{tab:main-validation}
+  \begin{threeparttable}
+  \begin{tabular}{@{}lrrr@{}}
+    \toprule
+    Mô hình & Số tham số & MAE 1--72 giờ & $\Delta$ MAE \\
+    \midrule
+    Trực tiếp, khớp dung lượng & 72.630 & $18.8620\pm0.0457$ & $+2.0952$ \\
+    \modelname{} chuẩn, có trễ & 72.659 & $16.7668\pm0.0238$ & --- \\
+    \textbf{\modelname{} rút gọn, không trễ} & 72.659 & $\mathbf{16.7630\pm0.0252}$ & $-0.0038$ \\
+    \bottomrule
+  \end{tabular}
+  \begin{tablenotes}[flushleft]\footnotesize
+    \item Mỗi dòng được huấn luyện và chọn điểm kiểm tra mô hình độc lập trên tập xác thực; tập kiểm tra không được mở trong thí nghiệm này.
+  \end{tablenotes}
+  \end{threeparttable}
+\end{table}
+
+Hình~\ref{fig:horizon} là một phân tích chân trời mang tính chẩn đoán từ các điểm kiểm tra lõi có nhánh trễ: so với mô hình trực tiếp mức chung/cục bộ ban đầu, mức giảm MAE chỉ $0.05$ ở giờ thứ 3 nhưng tăng lên $2.64$ ở giờ thứ 72. Đường cong không phải bằng chứng định lượng trung tâm và không thay thế so sánh khớp dung lượng trong Bảng~\ref{tab:main-validation}, vì đối chứng ở hình nhỏ hơn. Vai trò của nó chỉ là cho thấy một mẫu phù hợp với giả thuyết cơ chế: lợi ích của việc truyền trạng thái dự báo tích lũy dần theo chân trời.
+
+% Nguồn số liệu: paper/artifacts/residual_generation_comparison.json
+\begin{figure}[t]
+  \centering
+  \resizebox{\textwidth}{!}{%
+  \begin{tikzpicture}
+    \begin{axis}[
+      width=0.88\textwidth,
+      height=6.4cm,
+      xlabel={Chân trời dự báo (giờ)},
+      ylabel={MAE ($\unitpm$)},
+      xmin=0,xmax=75,ymin=9.5,ymax=22,
+      xtick={3,6,12,24,36,48,72},
+      ytick={10,12,14,16,18,20,22},
+      grid=major,
+      grid style={draw=tsgray!18},
+      axis line style={draw=tsdark},
+      tick style={draw=tsdark},
+      legend style={at={(0.02,0.98)},anchor=north west,draw=none,fill=white,fill opacity=0.88,text opacity=1},
+      every axis plot/.append style={very thick,mark size=2.2pt}
+    ]
+      \addplot[tsgray,mark=square*] coordinates {
+        (3,10.3810) (6,13.8933) (12,16.4209) (24,18.1079)
+        (36,19.5773) (48,19.8610) (72,20.6768)};
+      \addlegendentry{Dự báo trực tiếp mức chung/cục bộ}
+      \addplot[tsblue,mark=*] coordinates {
+        (3,10.3301) (6,13.5520) (12,15.4386) (24,16.6381)
+        (36,17.4443) (48,17.6631) (72,18.0389)};
+      \addlegendentry{\modelname{} hồi quy, biến thể có trễ}
+      \draw[densely dashed,tsorange,thick] (axis cs:72,18.0389) -- (axis cs:72,20.6768)
+        node[midway,right,font=\small,text=tsorange] {$-2.64$};
+    \end{axis}
+  \end{tikzpicture}}
+  \caption{Phân tích chẩn đoán MAE theo chân trời trên tập xác thực, trung bình ba hạt giống. Hình dùng biến thể hồi quy có nhánh trễ và một đối chứng trực tiếp nhỏ hơn; bằng chứng có kiểm soát chính nằm ở Bảng~\ref{tab:main-validation}.}
+  \label{fig:horizon}
+\end{figure}
+
+\subsection{Thành phần nào tạo ra cải thiện?}
+
+Kết quả loại bỏ thành phần ở Bảng~\ref{tab:ablation} và Hình~\ref{fig:ablation} tách ba kết luận. Thứ nhất, bỏ nguồn/mất mát gây suy giảm lớn nhất: $+3.6224$ MAE. Thứ hai, vận chuyển theo gió vẫn có đóng góp, nhưng nhỏ hơn: $+0.5132$. Thứ ba, bỏ nhánh lấy trạng thái lùi một bước không gây suy giảm. Trong phạm vi dữ liệu và kiến trúc này, cơ chế nổi trội là tích tụ/suy giảm không bảo toàn, còn ký ức ngắn hạn có ích đã được trạng thái hồi quy mang theo.
+
+\begin{table}[H]
+  \centering
+  \caption{Thí nghiệm loại bỏ từng cơ chế, được huấn luyện lại độc lập trên tập xác thực. MAE là trung bình $\pm$ độ lệch chuẩn qua ba hạt giống.}
+  \label{tab:ablation}
+  \begin{tabular}{@{}lrr@{}}
+    \toprule
+    Biến thể & MAE 1--72 giờ & $\Delta$ so với đầy đủ \\
+    \midrule
+    \modelname{} chuẩn, có trễ & $16.7668\pm0.0238$ & --- \\
+    Bỏ vận chuyển & $17.2800\pm0.0238$ & $+0.5132$ \\
+    Bỏ nguồn/mất mát & $20.3892\pm0.0252$ & $+3.6224$ \\
+    Bỏ vận chuyển trễ & $16.7630\pm0.0252$ & $-0.0038$ \\
+    Trực tiếp, khớp dung lượng & $18.8620\pm0.0457$ & $+2.0952$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% Nguồn số liệu: paper/artifacts/retrained_ablation.json
+\begin{figure}[H]
+  \centering
+  \resizebox{\textwidth}{!}{%
+  \begin{tikzpicture}
+    \begin{axis}[
+      width=0.9\textwidth,
+      height=6.2cm,
+      xmin=-0.30,xmax=3.95,
+      xlabel={$\Delta$ MAE so với \modelname{} chuẩn có trễ ($\unitpm$)},
+      symbolic y coords={nolag,notransport,direct,nosource},
+      ytick={nolag,notransport,direct,nosource},
+      yticklabels={Rút gọn không trễ,Bỏ vận chuyển,Trực tiếp khớp dung lượng,Bỏ nguồn/mất mát},
+      nodes near coords,
+      point meta=x,
+      nodes near coords align={horizontal},
+      every node near coord/.append style={font=\small,/pgf/number format/fixed,/pgf/number format/precision=3},
+      axis line style={draw=tsdark},
+      xmajorgrids,
+      grid style={draw=tsgray!18},
+      xtick={0,0.5,1,1.5,2,2.5,3,3.5},
+      enlarge y limits=0.20
+    ]
+      \draw[dashed,very thick,tsteal] (axis cs:0,nolag) -- (axis cs:0,nosource);
+      \addplot[only marks,mark=*,mark size=3.5pt,tsblue] coordinates {
+        (-0.0038,nolag) (0.5132,notransport) (2.0952,direct) (3.6224,nosource)};
+    \end{axis}
+  \end{tikzpicture}}
+  \caption{Thay đổi MAE sau khi huấn luyện lại từng biến thể. Đường nét đứt tại không biểu thị kết quả bằng \modelname{} chuẩn có trễ; điểm bên phải là suy giảm và điểm bên trái là cải thiện. Cách biểu diễn theo chênh lệch tránh phóng đại thị giác do cắt trục giá trị tuyệt đối.}
+  \label{fig:ablation}
+\end{figure}
+
+\subsection{Kết quả kiểm tra đã đóng băng và ranh giới so sánh}
+
+Để đặt \modelname{} vào toàn cảnh đối chứng, Bảng~\ref{tab:test-reference} tổ chức lại toàn bộ 19 mô hình và AirDDE trong phần KnowAir của Bảng 2 công bố AirDDE \citep{wu2026airdde}. Phân loại trình bày gồm dự báo không gian--thời gian tổng quát, mô hình chuyên cho chất lượng không khí, động lực nơ-ron hoặc có định hướng vật lý, rồi AirDDE như mốc tham chiếu mạnh nhất trong thiết lập chỉ dùng lịch sử. Các số này do AirDDE tổng hợp hoặc chạy lại, không phải kết quả tái lập của nghiên cứu này.
+
+Hai dòng \modelname{} được tách thành khối đề xuất vì dùng khí tượng lõi đã quan trắc trong 72 giờ đích, còn công thức bài toán của AirDDE chỉ nhận nồng độ và yếu tố phụ trợ lịch sử. Các điểm kiểm tra \modelname{} này thuộc mô hình chuẩn có trễ đã đóng băng, không thuộc đặc tả rút gọn không trễ. Vì hai khối có tập thông tin khác nhau, bảng là bản đồ đối chứng theo ngữ cảnh, không phải bảng xếp hạng đồng nhất; không thể từ đó tuyên bố \modelname{} vượt các phương pháp đã công bố dưới cùng điều kiện đầu vào.
+
+\clearpage
+\begin{table}[H]
+  \centering
+  \caption{Các đối chứng KnowAir đã công bố và kết quả \modelname{} dưới các tập thông tin khác nhau. Giá trị của các đối chứng được chép từ bảng mốc so sánh của AirDDE để đặt kết quả vào đúng ngữ cảnh; \modelname{} được báo riêng vì dùng khí tượng đã hiện thực hóa trong giai đoạn đích.}
+  \label{tab:test-reference}
+  \begin{threeparttable}
+  \footnotesize
+  \setlength{\tabcolsep}{3.4pt}
+  \renewcommand{\arraystretch}{1.03}
+  \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.55cm}>{\raggedright\arraybackslash}Xc rrr@{}}
+    \toprule
+    Họ phương pháp & Mô hình & \makecell{Khí tượng 72 giờ đích\\đã quan trắc?} & MAE & RMSE & sMAPE \\
+    \midrule
+    \multicolumn{6}{@{}l}{\textit{Khối A --- Các số công bố trong thiết lập đa yếu tố của AirDDE}} \\
+    \addlinespace[1pt]
+    \multirow{8}{2.55cm}{\raggedright Dự báo không gian--thời gian} & DCRNN (2018)$^{\dagger}$ & Không & 24.02 & 37.87 & 0.53 \\
+    & STGCN (2018)$^{\dagger}$ & Không & 23.64 & 32.48 & 0.52 \\
+    & ASTGCN (2019)$^{\dagger}$ & Không & 19.92 & 31.39 & 0.44 \\
+    & MTGNN (2020) & Không & 18.92 & 30.34 & 0.41 \\
+    & Crossformer (2023) & Không & 21.11 & 32.97 & 0.44 \\
+    & PDFormer (2023) & Không & 19.06 & 30.66 & 0.41 \\
+    & iTransformer (2024) & Không & 21.03 & 33.14 & 0.46 \\
+    & STMFormer (2025) & Không & 19.57 & 31.12 & 0.44 \\
+    \addlinespace[2pt]
+    \multirow{5}{2.55cm}{\raggedright Chuyên cho chất lượng không khí} & PM2.5-GNN (2020)$^{\dagger}$ & Không & 19.32 & 30.12 & 0.43 \\
+    & GAGNN (2023) & Không & 20.71 & 32.88 & 0.42 \\
+    & AirFormer (2023)$^{\dagger}$ & Không & 19.17 & 30.19 & 0.43 \\
+    & MegaCRN (2023) & Không & 18.77 & 29.45 & 0.42 \\
+    & HimNet (2024) & Không & 20.98 & 33.00 & 0.44 \\
+    \addlinespace[2pt]
+    \multirow{6}{2.55cm}{\raggedright Động lực nơ-ron / định hướng vật lý} & STGODE (2021) & Không & 21.40 & 33.47 & 0.45 \\
+    & STG-NCDE (2022) & Không & 21.21 & 33.80 & 0.45 \\
+    & STDDE (2024) & Không & 22.85 & 34.26 & 0.46 \\
+    & SGODE (2024) & Không & 20.02 & 32.03 & 0.42 \\
+    & AirPhyNet (2024)$^{\dagger}$ & Không & 21.31 & 31.77 & 0.47 \\
+    & Air-DualODE (2025)$^{\dagger}$ & Không & 18.64 & 29.37 & 0.42 \\
+    \addlinespace[2pt]
+    \rowcolor{tsblue!6}
+    Tham chiếu mạnh nhất & \textbf{AirDDE (2026)} & Không & \textbf{16.92} & \textbf{27.78} & \textbf{0.38} \\
+    \midrule
+    \multicolumn{6}{@{}l}{\textit{Khối B --- \modelname{} chuẩn có trễ, dùng khí tượng đích đã quan trắc}} \\
+    \addlinespace[1pt]
+    \multirow{2}{2.55cm}{\raggedright Thiết lập chẩn đoán đề xuất} & \modelname{}, trung bình ba mô hình đơn & Có & $16.1285\pm0.0932$ & --- & --- \\
+    & \modelname{}, trung bình đều ba mô hình & Có & 15.8130 & 24.3084 & 0.3718 \\
+    \bottomrule
+  \end{tabularx}
+  \begin{tablenotes}[flushleft]\footnotesize
+    \item[$\dagger$] AirDDE dẫn các dòng này từ Air-DualODE; các dòng còn lại được tác giả AirDDE chạy bằng mã chính thức trong thiết lập đa yếu tố. ``Crossformer'' là tên đã sửa từ lỗi in ``Corrformer'' trong bảng gốc.
+    \item Cách phân nhóm theo họ do nghiên cứu này tổ chức để trình bày; PDFormer được xếp vào nhóm dự báo không gian--thời gian tổng quát. Cột khí tượng đích dựa trên công thức AirDDE, $\widehat{X}_{T+1:T+H}=F(X_{1:T},M_{1:T};\Theta)$, và Phương trình~\eqref{eq:realized-info}. Không xếp hạng xuyên hai khối; tập kiểm tra cũng không còn là hộp khóa hoàn toàn mới.
+  \end{tablenotes}
+  \end{threeparttable}
+\end{table}
+
+\subsection{Mô hình còn sai ở đâu?}
+
+Chúng tôi phân loại từng điểm ở giờ thứ 72 bằng phân vị 90 của \pmfine{} trên tập huấn luyện tại chính trạm đó. ``Khởi phát'' nghĩa là trạng thái cuối lịch sử dưới ngưỡng nhưng mục tiêu vượt ngưỡng; ``kéo dài'' là cả hai cùng vượt; ``suy giảm'' là từ vượt xuống dưới; ``bình thường'' là cả hai cùng dưới. Hình~\ref{fig:failure} dùng gói dự báo của biến thể hồi quy có nhánh trễ, cùng gói đã dùng cho Hình~\ref{fig:horizon}.
+
+Ở mọi pha, tiến hóa hồi quy giảm sai số so với đối chứng trực tiếp. Tuy nhiên, khởi phát vẫn khó nhất với MAE $55.82$, tiếp theo là ô nhiễm kéo dài với $50.85$. Theo mùa, mùa đông DJF còn MAE $26.84$, cao hơn rõ rệt các mùa khác. Mô hình vì thế không giải quyết dứt điểm các bước ngoặt đột ngột và các đợt ô nhiễm mùa đông; đây là hai chế độ cần dữ liệu nguồn phát thải hoặc dự báo ngoại sinh tốt hơn.
+
+% Nguồn số liệu: paper/artifacts/residual_generation_comparison.json
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{groupplot}[
+      group style={group size=2 by 1,horizontal sep=1.45cm},
+      width=0.46\textwidth,
+      height=6.1cm,
+      ybar,
+      ymin=0,
+      ylabel={MAE ở giờ thứ 72 ($\unitpm$)},
+      axis line style={draw=tsdark},
+      ymajorgrids,
+      grid style={draw=tsgray!18},
+      legend style={draw=none,fill=white,fill opacity=0.88,text opacity=1,at={(0.03,0.96)},anchor=north west,legend columns=1,font=\scriptsize},
+      tick label style={font=\small},
+      label style={font=\small}
+    ]
+      \nextgroupplot[
+        title={Theo pha sự kiện},
+        symbolic x coords={normal,onset,continuation,decay},
+        xtick=data,
+        xticklabels={Bình thường,Khởi phát,Kéo dài,Suy giảm},
+        x tick label style={rotate=24,anchor=east},
+        ymax=78
+      ]
+        \addplot[fill=tsgray!60,draw=tsgray] coordinates {
+          (normal,16.2041) (onset,71.5301) (continuation,56.1307) (decay,27.9313)};
+        \addplot[fill=tsblue!70,draw=tsblue] coordinates {
+          (normal,14.7637) (onset,55.8164) (continuation,50.8459) (decay,20.9322)};
+        \legend{Trực tiếp,\modelname{} hồi quy}
+
+      \nextgroupplot[
+        title={Theo mùa},
+        symbolic x coords={DJF,MAM,JJA,SON},
+        xtick=data,
+        ymax=38,
+        ylabel={}
+      ]
+        \addplot[fill=tsgray!60,draw=tsgray] coordinates {
+          (DJF,34.1314) (MAM,18.8239) (JJA,12.2368) (SON,18.6834)};
+        \addplot[fill=tsblue!70,draw=tsblue] coordinates {
+          (DJF,26.8402) (MAM,18.2121) (JJA,11.9720) (SON,15.9051)};
+    \end{groupplot}
+  \end{tikzpicture}
+  \caption{Phân tích lỗi ở chân trời 72 giờ trên tập xác thực, trung bình ba hạt giống. DJF, MAM, JJA và SON lần lượt chỉ mùa đông, xuân, hạ và thu theo khí hậu học.}
+  \label{fig:failure}
+\end{figure}
+
+\subsection{Chẩn đoán chỉ dùng lịch sử}
+
+Khoảng cách giữa hai tập thông tin xuất hiện rõ ở Bảng~\ref{tab:history-only}. Khi không đọc khí tượng giai đoạn đích, duy trì khí tượng cuối, GRU dự báo khí tượng, mẫu mùa, trạng thái ngoại sinh ẩn hay phân rã đa thang đều dừng quanh MAE $20.5$--$20.9$. Biến thể tốt nhất trong nhóm này, định danh hệ ngoại sinh phân rã, đạt $20.5693$, vẫn kém cấu hình dùng khí tượng đích khoảng $3.81$ MAE. Thí nghiệm không chứng minh rằng khí tượng là nguồn bất định duy nhất; nó cho thấy trong họ mô hình và dữ liệu hiện có, thay thế đầu vào ngoại sinh tương lai là nút thắt lớn hơn việc thêm dung lượng hay bộ nhớ.
+
+\begin{table}[H]
+  \centering
+  \caption{Chẩn đoán trên tập xác thực theo tập thông tin. Các dòng có dấu $^{*}$ là sàng lọc một hạt giống (43), không phải ước lượng ba hạt giống.}
+  \label{tab:history-only}
+  \begin{tabular}{@{}lcr@{}}
+    \toprule
+    Cách cung cấp tác động ngoại sinh & Đọc khí tượng đích & MAE 1--72 giờ \\
+    \midrule
+    \modelname{} rút gọn, khí tượng đã quan trắc & Có & $16.7630\pm0.0252$ \\
+    Duy trì quan trắc khí tượng cuối & Không & $20.7945^{*}$ \\
+    GRU khí tượng nhân quả & Không & $20.7071^{*}$ \\
+    Trạng thái tác động ẩn & Không & $20.7878\pm0.0952$ \\
+    Mẫu mùa có trọng số & Không & $20.8114^{*}$ \\
+    Định danh hệ ngoại sinh phân rã & Không & $20.5693^{*}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Thảo luận}
+
+\subsection{Điều quan sát được và điều có thể suy ra}
+
+\textbf{Quan sát 1:} đối chứng trực tiếp gần bằng số tham số kém \modelname{} $2.0952$ MAE. \textbf{Suy luận:} mức cải thiện chủ yếu gắn với cách sinh quỹ đạo tuần tự, không phải chỉ vì mô hình hồi quy có nhiều tham số hơn. Suy luận này có phạm vi trong cặp kiến trúc được kiểm tra; nó không nói mọi mô hình trực tiếp đều phải kém mọi mô hình hồi quy.
+
+\textbf{Quan sát 2:} bỏ nguồn/mất mát làm MAE tăng $3.6224$, lớn hơn mức tăng $0.5132$ khi bỏ vận chuyển. \textbf{Suy luận:} trong giao thức KnowAir và với sáu biến khí tượng lõi, các biến đổi không bảo toàn chưa phân giải có ảnh hưởng dự báo lớn hơn phần tinh chỉnh tái phân bố không gian tường minh. Tuy nhiên, độ lớn của phép loại bỏ cũng phản ánh miền chức năng rộng của hạng này: nó được phép hấp thụ phát thải, lắng đọng, phản ứng, trao đổi qua biên và cả sai số mô hình chưa phân giải. Vì vậy, kết quả không chứng minh rằng phát thải vật lý hay mất mát hóa học là quá trình chi phối động lực \pmfine{} trong khí quyển nói chung.
+
+\textbf{Quan sát 3:} bỏ nhánh vận chuyển trễ một bước làm MAE thay đổi $-0.0038$. \textbf{Suy luận:} sau khi trường dự báo được cuộn tiến, trạng thái hồi quy và GRU cục bộ đã mang đủ ký ức ngắn hạn để nhánh trễ cố định trở nên dư thừa. Kết quả này không phủ nhận độ trễ lan truyền trong tự nhiên hay giá trị của độ trễ biến thiên theo không gian như trong AirDDE \citep{wu2026airdde}; nó chỉ bác bỏ nhánh trễ một bước cụ thể của chúng tôi.
+
+\textbf{Quan sát 4:} các biến thể chỉ dùng lịch sử dừng quanh $20.5$--$20.9$ MAE. \textbf{Suy luận:} câu hỏi tiếp theo ít có khả năng được giải quyết bằng cách tăng thêm bộ nhớ xác định. Hướng phù hợp hơn là dự báo phân phối của tác động ngoại sinh, dùng trường khí tượng dự báo thực tế, và truyền bất định đó vào quỹ đạo \pmfine{}.
+
+\subsection{Vì sao phân rã đơn giản vẫn hữu ích?}
+
+Phân rã trong Phương trình~\eqref{eq:source} tạo ra hai ``đường thoát'' rõ ràng cho sai số. Nếu toàn mạng cùng tích tụ, $S^g_k$ có thể nâng nền vùng mà không buộc vận chuyển làm việc trái vai trò. Nếu một trạm lệch khỏi nền, $S^{\ell}_{i,k}$ xử lý phần cục bộ nhưng không làm đổi trung bình mạng. Tương tự, phép trừ trung bình ở $\bm{T}_k$ ngăn đầu vận chuyển học một độ lệch chung dễ tối ưu nhưng khó diễn giải. Đây là thiên kiến cấu trúc mềm: nó tổ chức không gian nghiệm, không áp đặt một phương trình hóa học hoàn chỉnh.
+
+Ưu điểm thực nghiệm của thiết kế là có thể kiểm tra trực tiếp. Một kiến trúc lớn gồm nhiều mô-đun có thể đạt MAE thấp nhưng khó chỉ ra mô-đun nào mang thông tin. Ở đây, các phép loại bỏ nguồn, vận chuyển, trễ và dạng sinh trực tiếp tạo thành một chuỗi lập luận: tiến hóa tuần tự có ích; nguồn/mất mát giải thích phần lớn lợi ích; vận chuyển có đóng góp vừa phải; trễ cố định không cần thiết.
+
+\section{Hạn chế và nguy cơ đối với giá trị kết luận}
+
+\begin{enumerate}
+  \item \textbf{Khí tượng giai đoạn đích.} Kết quả mạnh nhất dùng giá trị khí tượng đã quan trắc trong tương lai. Đây không phải điều kiện nhân quả sẵn có khi vận hành. Cần đánh giá lại với trường khí tượng dự báo và nhiều thành viên dự báo tổ hợp.
+  \item \textbf{Hai vai trò mô hình và xuất xứ kiểm tra.} Đặc tả rút gọn không trễ mới có kết quả xác thực. Các số kiểm tra $16.1285\pm0.0932$ và $15.8130/24.3084/0.3718$ thuộc mô hình chuẩn có nhánh trễ. Bài báo tách hai vai trò này và không gán lại kết quả giữa chúng.
+  \item \textbf{So sánh AirDDE không đồng nhất đầu vào.} AirDDE báo $16.92/27.78/0.38$ trên KnowAir \citep{wu2026airdde}, nhưng chỉ có số tổng hợp và một tập thông tin khác. Không thể thực hiện kiểm định ghép cặp hay tuyên bố hơn kém công bằng.
+  \item \textbf{Tập kiểm tra KnowAir đã từng được xem.} Dù ma trận thí nghiệm loại bỏ chính không mở tập kiểm tra, tập này đã được quan sát ở cấp dự án trước khi đóng băng. Kết quả trên tập kiểm tra phải được xem là mốc chẩn đoán, không phải hộp khóa hoàn toàn mới.
+  \item \textbf{Một bộ dữ liệu chính.} Kết luận cơ chế hiện dựa trên KnowAir. Giao thức China-AQI 96 giờ vào--24 giờ ra đã được tái dựng, nhưng tập kiểm tra hiệu chỉnh vẫn chưa mở vì biến thể chỉ dùng lịch sử không vượt cổng xác thực đặt trước.
+  \item \textbf{Ràng buộc bảo toàn xấp xỉ.} $\sum_iT_{i,k}=0$ bảo toàn trung bình số học trên các trạm, không phải khối lượng vật chất trong một miền liên tục. Mật độ trạm, thể tích đại diện, biên mở và phản ứng hóa học đều chưa được mô hình hóa đầy đủ.
+  \item \textbf{Bất định thống kê.} Ba hạt giống cho thấy độ biến thiên tối ưu hóa nhỏ, nhưng các cửa sổ thời gian chồng lấn mạnh. Độ lệch chuẩn theo hạt giống không thay thế khoảng tin cậy theo khối thời gian hay đánh giá trên nhiều năm độc lập.
+\end{enumerate}
+
+\section{Khả năng tái lập}
+
+Mã nguồn lưu toàn bộ phép biến đổi dữ liệu, kiến trúc, hàm mất mát và lệnh huấn luyện. Ma trận thí nghiệm loại bỏ được chạy với hạt giống 42, 43 và 44; mỗi biến thể có điểm kiểm tra riêng. Gói bài báo lưu bảng số liệu nguồn ở định dạng JSON và mã băm SHA-256 của sáu điểm kiểm tra lõi. Tập kiểm tra không được gọi trong quy trình huấn luyện lại các phép loại bỏ. Bảng~\ref{tab:hyperparameters} ở Phụ lục ghi các siêu tham số cần thiết để tái lập.
+
+Để tránh rò rỉ theo thời gian, chuẩn hóa chỉ khớp trên 50\% đầu; cửa sổ lịch sử và đích nằm trọn trong từng phân đoạn; điểm kiểm tra mô hình được chọn bằng MAE xác thực. Với phân tích phần dư, đoạn huấn luyện đầu dò và đoạn đánh giá còn được ngăn bởi khoảng loại bỏ 24 gốc dự báo. Những đầu dò này chỉ phục vụ sàng lọc cơ chế, không được dùng như kiểm định cuối. Lệnh tái lập ma trận chính là \texttt{python scripts/run\_retrained\_ablations.py}; mã nền tương ứng định danh Git \texttt{1fc4ce0484e6}. Môi trường tham chiếu dùng Python 3.11, PyTorch 2.8.0, CUDA 12.8 và một bộ xử lý đồ họa NVIDIA GeForce RTX 5060 Ti. Kho ẩn danh cùng định danh phiên bản lưu trữ sẽ được bổ sung trước khi nộp.
+
+\section{Kết luận}
+
+Nghiên cứu cho thấy dự báo \pmfine{} 72 giờ có điều kiện trên khí tượng đích được hưởng lợi khi được viết như một quá trình tiến hóa trạng thái thay vì sinh toàn bộ chân trời trực tiếp từ một biểu diễn lịch sử cố định. Bằng chứng mạnh nhất là đối chứng trực tiếp gần bằng dung lượng và dùng cùng tập thông tin: MAE xác thực tăng từ $16.7668$ lên $18.8620$ khi bỏ cơ chế cuộn tiến. Trong toán tử hồi quy, nguồn/mất mát là thành phần chi phối mức cải thiện, còn vận chuyển theo gió đóng góp nhỏ hơn nhưng nhất quán.
+
+Nhánh vận chuyển trễ cố định không mang thêm lợi ích sau huấn luyện lại, nên được bỏ trong đặc tả rút gọn dùng để diễn giải cơ chế. Mô hình chuẩn có trễ vẫn là nguồn duy nhất của kết quả kiểm tra đã đóng băng. Phát hiện này làm câu chuyện cơ chế gọn hơn: tiến hóa tuần tự đã cung cấp ký ức cần thiết, trong khi phân rã vận chuyển--nguồn giúp tổ chức gia số theo vai trò có thể kiểm tra. Khoảng cách lớn của các biến thể chỉ dùng lịch sử gợi ý rằng mô tả phân phối của tác động ngoại sinh tương lai, dưới ràng buộc dự báo nhân quả, là một hướng quan trọng hơn việc chỉ tăng dung lượng.
+
+\FloatBarrier
+\appendix
+
+\section{Siêu tham số và môi trường tái lập}
+
+\begin{table}[h]
+  \centering
+  \caption{Siêu tham số của ma trận thí nghiệm loại bỏ chính. Hai tốc độ học phản ánh đúng lệnh chạy đã đóng băng.}
+  \label{tab:hyperparameters}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    Thành phần & \modelname{} & Đối chứng trực tiếp \\
+    \midrule
+    Chiều ẩn & 64 & 84 \\
+    Chiều nhúng trạm & 8 & 10 \\
+    Chiều đầu toán tử / nhúng chân trời & 32 / 8 & --- / 20 \\
+    Số láng giềng & 8 & --- \\
+    Thang suy giảm khoảng cách & 250 km & --- \\
+    Chặn mỗi gia số thành phần & 0.5 đơn vị chuẩn hóa & --- \\
+    Số tham số & 72.659 & 72.630 \\
+    Hàm mất mát & Hàm ghép MAE, Phương trình~\eqref{eq:loss} & Hàm ghép MAE, Phương trình~\eqref{eq:loss} \\
+    Bộ tối ưu & AdamW & AdamW \\
+    Tốc độ học ban đầu & $10^{-3}$ & $3\times10^{-3}$ \\
+    Suy giảm trọng số & $10^{-5}$ & $10^{-5}$ \\
+    Cỡ lô & 256 & 256 \\
+    Số vòng tối đa / dừng sớm & 30 / 6 & 30 / 6 \\
+    Hệ số giảm tốc độ học & 0.5 & 0.5 \\
+    Chuẩn cắt đạo hàm & 5.0 & 5.0 \\
+    Hạt giống & 42, 43, 44 & 42, 43, 44 \\
+    Chỉ số chọn điểm kiểm tra & MAE xác thực 1--72 giờ & MAE xác thực 1--72 giờ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\noindent\textbf{Tệp bằng chứng.}
+Các số và xuất xứ chính được lưu trong các tệp sau:
+\begin{itemize}
+  \item \path{paper/RESULTS.json}: bảng tổng hợp kết quả và giới hạn phát biểu;
+  \item \path{paper/artifacts/retrained_ablation.json}: thí nghiệm huấn luyện lại;
+  \item \path{paper/artifacts/lagged_freeze_manifest.json}: xuất xứ mô hình chuẩn có trễ;
+  \item \path{paper/CHECKPOINTS.json}: mã băm SHA-256 của điểm kiểm tra.
+\end{itemize}
+Các khoảng phiên bản thư viện nằm trong \path{requirements.txt}; lệnh kiểm tra CUDA nằm ở \path{scripts/verify_cuda.py}.
+
+\section*{Tuyên bố}
+
+\noindent\textbf{Dữ liệu và mã nguồn.}
+KnowAir được phát hành cùng PM2.5-GNN \citep{wang2020pm25gnn}. Đường dẫn kho mã ẩn danh, định danh phiên bản lưu trữ và giấy phép phát hành sẽ được bổ sung trong bản nộp.
+
+\noindent\textbf{Xung đột lợi ích, tài trợ và đóng góp tác giả.}
+Các tuyên bố này sẽ được hoàn thiện theo biểu mẫu của tạp chí đích trước khi nộp.
+
+\FloatBarrier
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

@@ -14,3 +14,13 @@ artifacts/predictions/**/persistence.npy
 artifacts/predictions/**/forecast_start.npy
 artifacts/*_stdout.log
 artifacts/*_stderr.log
+
+# LaTeX build intermediates; keep latex/paper.pdf as the compiled manuscript.
+latex/*.aux
+latex/*.bbl
+latex/*.blg
+latex/*.fdb_latexmk
+latex/*.fls
+latex/*.log
+latex/*.out
+latex/*.synctex.gz
