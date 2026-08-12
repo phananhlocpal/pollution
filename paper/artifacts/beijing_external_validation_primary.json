@@ -23,8 +23,8 @@
       "std": 0.6406146403712369
     },
     "smape": {
-      "mean": 0.6404822616797189,
-      "std": 0.027052032914971325
+      "mean": 0.6374335856440759,
+      "std": 0.027354049581520122
     }
   },
   "tsr": {
@@ -37,8 +37,8 @@
       "std": 0.7498875384590103
     },
     "smape": {
-      "mean": 0.5620089474709712,
-      "std": 0.006271237563956602
+      "mean": 0.5581747970300581,
+      "std": 0.006318591253383993
     }
   },
   "paired_direct_minus_tsr": {
@@ -107,7 +107,7 @@
         "mae": 32.346992762999726,
         "rmse": 54.523470519244775,
         "mape": 90.65771158003194,
-        "smape": 0.6039973549629791,
+        "smape": 0.6005133897511965,
         "smape_masked": 0.6005133897511965,
         "points": 316248
       }
@@ -122,7 +122,7 @@
         "mae": 34.124095453328806,
         "rmse": 56.02824457988334,
         "mape": 103.6305819280521,
-        "smape": 0.6686925339395403,
+        "smape": 0.665895703095893,
         "smape_masked": 0.665895703095893,
         "points": 316248
       }
@@ -137,7 +137,7 @@
         "mae": 33.641712020147786,
         "rmse": 55.66119285599581,
         "mape": 100.11117340064695,
-        "smape": 0.6487568961366375,
+        "smape": 0.6458916640851383,
         "smape_masked": 0.6458916640851383,
         "points": 316248
       }
@@ -146,13 +146,13 @@
       "label": "tsr",
       "seed": 42,
       "architecture": "transport_source_recurrent",
-      "path": "artifacts/external_beijing/tsr_no_lag/seed_42/best_model.pt",
-      "sha256": "8f5a37fa2362a4171f553fa8250696141788dbbbb365f601b1e999ab3b90680e",
+      "path": "artifacts/external_beijing/tsr_primary/seed_42/best_model.pt",
+      "sha256": "0e370f6dd27066c116a00c1c4d578c380e0248e250c2a01801afc6f59b31fb7f",
       "overall": {
         "mae": 32.01812535903369,
         "rmse": 59.08682250635844,
         "mape": 77.94912445904409,
-        "smape": 0.5671927301311762,
+        "smape": 0.5633631879202555,
         "smape_masked": 0.5633631879202555,
         "points": 316248
       }
@@ -161,13 +161,13 @@
       "label": "tsr",
       "seed": 43,
       "architecture": "transport_source_recurrent",
-      "path": "artifacts/external_beijing/tsr_no_lag/seed_43/best_model.pt",
-      "sha256": "7831edcdbb4e86f827b157ba76126e973acb01878646ff9266f9629859d84ea2",
+      "path": "artifacts/external_beijing/tsr_primary/seed_43/best_model.pt",
+      "sha256": "a0de307cbb25c2489b7248a1fe1b4a91b6d30d8035559fbb991ab03623bc6ffb",
       "overall": {
         "mae": 31.241003433869352,
         "rmse": 58.09640666969018,
         "mape": 79.01055394228226,
-        "smape": 0.5531849674962658,
+        "smape": 0.5492800188246985,
         "smape_masked": 0.5492800188246985,
         "points": 316248
       }
@@ -176,13 +176,13 @@
       "label": "tsr",
       "seed": 44,
       "architecture": "transport_source_recurrent",
-      "path": "artifacts/external_beijing/tsr_no_lag/seed_44/best_model.pt",
-      "sha256": "77192744fa03479514e9715b57fda4580b2d0270308ec456a28cbd9ee910edc1",
+      "path": "artifacts/external_beijing/tsr_primary/seed_44/best_model.pt",
+      "sha256": "5cda103905384b6fa792d7534e403c8e44232242c82cb84023e8364fc006cd9c",
       "overall": {
         "mae": 32.39042963899605,
         "rmse": 59.931315410734385,
         "mape": 80.74747864053823,
-        "smape": 0.5656491447854717,
+        "smape": 0.5618811843452206,
         "smape_masked": 0.5618811843452206,
         "points": 316248
       }

@@ -81,7 +81,7 @@ cho dự báo \pmfine{} hạn dài}
 \begin{abstract}
 Dự báo \pmfine{} trong 72 giờ không chỉ đòi hỏi nhận ra tương quan không gian--thời gian, mà còn phải mô tả cách trường nồng độ đã dự báo tiếp tục biến đổi ở từng bước kế tiếp. Tuy vậy, nhiều mô hình sinh đồng thời toàn bộ chân trời từ một biểu diễn lịch sử cố định, nên trạng thái dự báo ở giờ trước không trực tiếp trở thành điều kiện của giờ sau. Nghiên cứu này đặt lại bài toán như một quá trình tiến hóa rời rạc và đề xuất toán tử hồi quy vận chuyển--nguồn (\modelname). Ở mỗi bước ba giờ, \modelname{} cộng vào trường \pmfine{} hiện tại hai thành phần: vận chuyển theo gió trên đồ thị tám láng giềng và nguồn/mất mát gồm mức chung toàn vùng cùng độ lệch riêng từng trạm. Thành phần vận chuyển và phần nguồn cục bộ được ép có tổng bằng không trên các trạm; đây là ràng buộc lấy cảm hứng từ bảo toàn, không phải định luật bảo toàn khối lượng tuyệt đối.
 
-Thí nghiệm có kiểm soát trên KnowAir dùng 184 trạm, lịch sử 72 giờ, chân trời 72 giờ, chia thời gian 50/25/25 và ba hạt giống ngẫu nhiên. Trong thiết lập chẩn đoán chính, cả \modelname{} và đối chứng đều nhận khí tượng đã quan trắc trong 72 giờ đích; các biến thể chỉ dùng lịch sử được đánh giá riêng. Trên tập xác thực, \modelname{} đạt MAE $16.7630\pm0.0252$, thấp hơn mô hình dự báo trực tiếp gần bằng số tham số ở mức $18.8620\pm0.0457$. Trên tập kiểm tra, ba mô hình đơn đạt $16.1266\pm0.0348$; trung bình đều ba mô hình đạt MAE/RMSE/sMAPE là $15.8205/24.3253/0.3721$. Thí nghiệm thành phần xác định nguồn/mất mát là khối đóng góp lớn nhất, trong khi vận chuyển theo gió mang lại phần cải thiện nhỏ hơn. Trên Beijing Multi-Site độc lập gồm 12 trạm, \modelname{} giảm điểm ước lượng MAE kiểm tra từ $32.522$ xuống $30.873$ và sMAPE từ $0.546$ xuống $0.477$, dù RMSE tăng từ $51.196$ lên $52.079$. Khoảng tin cậy theo khối thời gian của chênh lệch MAE Beijing còn cắt 0, cho thấy lợi ích ngoài mẫu cần được kiểm chứng tiếp trên các mạng trạm khác.
+Thí nghiệm có kiểm soát trên KnowAir dùng 184 trạm, lịch sử 72 giờ, chân trời 72 giờ, chia thời gian 50/25/25 và ba hạt giống ngẫu nhiên. Trong thiết lập chẩn đoán chính, \modelname{}, đối chứng trực tiếp và mã công khai của AirDDE đều nhận khí tượng đã quan trắc trong 72 giờ đích; các biến thể chỉ dùng lịch sử được đánh giá riêng. Trên tập xác thực, \modelname{} đạt MAE $16.7630\pm0.0252$, thấp hơn mô hình dự báo trực tiếp gần bằng số tham số ở mức $18.8620\pm0.0457$. Trên tập kiểm tra, ba mô hình đơn đạt $16.1266\pm0.0348$, thấp hơn 4,7\% so với điểm MAE $16.92$ do AirDDE công bố dưới cùng tập thông tin và giao thức KnowAir cốt lõi; vì AirDDE không phát hành dự báo hay thống kê nhiều hạt giống, đây là so sánh điểm chứ không phải kiểm định ghép cặp. Trung bình đều ba mô hình \modelname{} đạt MAE/RMSE/sMAPE là $15.8205/24.3253/0.3721$. Trên Beijing Multi-Site độc lập gồm 12 trạm, \modelname{} giảm điểm ước lượng MAE kiểm tra từ $32.522$ xuống $30.873$ và sMAPE từ $0.546$ xuống $0.477$, dù RMSE tăng từ $51.196$ lên $52.079$. Khoảng tin cậy theo khối thời gian của chênh lệch MAE Beijing còn cắt 0, cho thấy lợi ích ngoài mẫu cần được kiểm chứng tiếp trên các mạng trạm khác.
 \end{abstract}
 
 \noindent\textbf{Từ khóa:} \pmfine; dự báo có điều kiện khí tượng; dự báo nhiều bước; tiến hóa trạng thái; đồ thị theo gió; nguồn và mất mát.
@@ -102,7 +102,7 @@ Các mô hình có định hướng vật lý tiếp cận câu hỏi từ phư�
   + \bm{S}_{\phi}(\widehat{\bm{x}}_{k},\bm{m}_{k}),
   \label{eq:central}
 \end{equation}
-trong đó $\bm{T}_{\theta}$ tái phân bố nồng độ giữa các trạm, còn $\bm{S}_{\phi}$ biểu diễn tích tụ hoặc suy giảm không bảo toàn trong miền quan sát. Cách viết này không khẳng định đã nhận dạng đúng từng quá trình hóa học. Giá trị của nó nằm ở chỗ tạo ra các giả thuyết có thể bác bỏ bằng thí nghiệm loại bỏ thành phần: nếu tiến hóa tuần tự không cần thiết, mô hình trực tiếp cùng dung lượng phải đạt kết quả tương đương; nếu nguồn/mất mát không quan trọng, loại bỏ thành phần này không được gây suy giảm lớn.
+trong đó $\bm{T}_{\theta}$ tái phân bố nồng độ giữa các trạm, còn $\bm{S}_{\phi}$ biểu diễn tích tụ hoặc suy giảm không bảo toàn trong miền quan sát. Cách viết này không khẳng định đã nhận dạng đúng từng quá trình hóa học. Giả thuyết trung tâm có thể kiểm tra trực tiếp: nếu tiến hóa tuần tự không cần thiết, mô hình trực tiếp cùng dung lượng phải đạt kết quả tương đương.
 
 Nghiên cứu có bốn đóng góp:
 \begin{enumerate}
@@ -130,25 +130,23 @@ Các nghiên cứu gần đây đã đưa phương trình vào mạng theo nhi�
 
 \subsection{Tác động ngoại sinh tương lai}
 
-Phương trình vi phân nơ-ron có trễ cho phép đạo hàm hiện tại phụ thuộc vào trạng thái quá khứ \citep{zhu2021ndde}; AirDDE áp dụng ý tưởng này bằng bộ nhớ tăng cường chú ý và đồ thị bình lưu có trễ \citep{wu2026airdde}. \modelname{} không dùng một nhánh trễ tường minh: trạng thái dự báo gần nhất đã được đưa trực tiếp vào phép chuyển kế tiếp. Một nhánh trễ cố định một bước chỉ được giữ như thí nghiệm lựa chọn kiến trúc.
-
-Một khác biệt khác nằm ở tập thông tin. Một số phương pháp dùng dự báo khí tượng cho giai đoạn đích \citep{xu2021highair}; công thức AirDDE dùng nồng độ và yếu tố phụ trợ đến thời điểm hiện tại \citep{wu2026airdde}. Cấu hình mạnh nhất của chúng tôi dùng giá trị khí tượng đã quan trắc ở giai đoạn cần dự báo. Hai bài toán vì thế không đồng nhất. Chúng tôi đưa khác biệt này vào phát biểu bài toán, bảng kết quả và phần hạn chế, thay vì để nó ẩn trong chi tiết cài đặt.
+Mô tả trên giấy và mã công khai của AirDDE không nhất quán về tập thông tin. Phương trình bài toán của AirDDE chỉ ghi nồng độ và yếu tố phụ trợ đến thời điểm hiện tại, $\widehat{X}_{T+1:T+H}=F(X_{1:T},M_{1:T};\Theta)$, và phần phương pháp nhiều lần gọi các yếu tố này là lịch sử \citep{wu2026airdde}. Tuy nhiên, kiểm toán mã công khai cho thấy bộ nạp dữ liệu tạo cửa sổ đích gồm cả nhãn và khí tượng, sau đó tách các kênh khí tượng tại $T+1{:}T+H$ thành \texttt{y\_cov}; mô hình dùng tensor này trong hạng nguồn/mất mát và ở mỗi bước giải mã. Vì vậy, giao thức thực thi của AirDDE điều kiện hóa trên khí tượng đích đã quan trắc, giống tập thông tin chính của chúng tôi. Hai cách cài đặt chỉ khác biểu diễn hướng gió: AirDDE chuẩn hóa góc theo độ, còn chúng tôi dùng sin/cos để tôn trọng tính tuần hoàn. Đây là khác biệt tiền xử lý, không phải lợi thế về thông tin sẵn có.
 
 \begin{table}[t]
   \centering
   \caption{Định vị cấu trúc của một số phương pháp gần nhất. Bảng mô tả cách xây dựng mô hình, không phải bảng xếp hạng và không hàm ý các giao thức đầu vào giống nhau.}
   \label{tab:method-positioning}
   \scriptsize
-  \begin{tabularx}{\textwidth}{@{}p{1.45cm}p{1.7cm}p{2.05cm}Xp{1.45cm}p{1.7cm}@{}}
+  \begin{tabularx}{\textwidth}{@{}p{1.45cm}p{1.8cm}p{2.1cm}Xp{2cm}@{}}
     \toprule
-    Phương pháp & Dạng tiến hóa & Quan hệ không gian & Phân rã động lực & Trễ tường minh & Khí tượng trong công thức dự báo \\
+    Phương pháp & Dạng tiến hóa & Quan hệ không gian & Phân rã động lực & Khí tượng trong công thức dự báo \\
     \midrule
-    PM2.5-GNN & Rời rạc, dựa trên bộ mã hóa & Đồ thị có tri thức miền & Không tách vận chuyển và nguồn/mất mát & Không & Theo giao thức bài gốc \\
-    AirFormer & Dự báo bằng bộ biến đổi & Chú ý không gian dạng bia tiêu & Không tách theo quá trình vật lý & Không & Theo giao thức bài gốc \\
-    AirPhyNet & Liên tục & Đồ thị trạm & Khuếch tán và bình lưu & Không & Theo giao thức bài gốc \\
-    Air-DualODE & Hai hệ liên tục & Đồ thị trạm & Nhánh vật lý và nhánh bù dữ liệu & Không & Theo giao thức bài gốc \\
-    AirDDE & Liên tục có trễ & Khoảng cách và trường gió & Khuếch tán, bình lưu và nguồn/mất mát & Có, thích nghi theo dữ liệu & Chỉ lịch sử trong công thức bài gốc \\
-    \modelname{} & Rời rạc, hồi quy & Đồ thị tám láng giềng theo gió & Vận chuyển tổng bằng không và nguồn/mất mát & Không & Khí tượng đích đã quan trắc \\
+    PM2.5-GNN & Rời rạc, dựa trên bộ mã hóa & Đồ thị có tri thức miền & Không tách vận chuyển và nguồn/mất mát & Theo giao thức bài gốc \\
+    AirFormer & Dự báo bằng bộ biến đổi & Chú ý không gian dạng bia tiêu & Không tách theo quá trình vật lý & Theo giao thức bài gốc \\
+    AirPhyNet & Liên tục & Đồ thị trạm & Khuếch tán và bình lưu & Theo giao thức bài gốc \\
+    Air-DualODE & Hai hệ liên tục & Đồ thị trạm & Nhánh vật lý và nhánh bù dữ liệu & Theo giao thức bài gốc \\
+    AirDDE & Liên tục & Khoảng cách và trường gió & Khuếch tán, bình lưu và nguồn/mất mát & Công thức: lịch sử; mã: khí tượng đích đã quan trắc \\
+    \modelname{} & Rời rạc, hồi quy & Đồ thị tám láng giềng theo gió & Vận chuyển tổng bằng không và nguồn/mất mát & Khí tượng đích đã quan trắc \\
     \bottomrule
   \end{tabularx}
 \end{table}
@@ -358,7 +356,7 @@ Dữ liệu được chia theo thời gian 50/25/25, tương ứng 5.844/2.922/2
 
 \begin{table}[t]
   \centering
-  \caption{Giao thức KnowAir. Tập kiểm tra không được dùng để chọn siêu tham số trong ma trận thí nghiệm loại bỏ đã huấn luyện lại.}
+  \caption{Giao thức KnowAir. Tập kiểm tra không được dùng để chọn siêu tham số.}
   \label{tab:protocol}
   \begin{threeparttable}
   \begin{tabular}{@{}ll@{}}
@@ -385,11 +383,9 @@ Dữ liệu được chia theo thời gian 50/25/25, tương ứng 5.844/2.922/2
 
 Khoảng 2,1\% giá trị \pmfine{} tại các mốc ba giờ bị thiếu. Mặt nạ quan trắc được giữ xuyên suốt hàm mất mát và phép tính chỉ số, nên giá trị điền không được xem là nhãn thật. Riêng đầu vào lịch sử bị thiếu được điền tiến theo thời gian; trung vị chỉ từ tập huấn luyện được dùng nếu chuỗi mở đầu bằng khoảng trống. Dữ liệu được chia tuần tự 70/10/20, tương ứng 8.134/1.122/2.291 cửa sổ huấn luyện, xác thực và kiểm tra. Cả đối chứng trực tiếp lẫn \modelname{} nhận cùng lịch sử 72 giờ và khí tượng đã quan trắc trong 72 giờ đích. Kiến trúc, hạt giống và quy tắc dừng được cố định trước; mã băm của sáu điểm kiểm tra cùng quy tắc diễn giải được lưu trước lần đọc duy nhất của 20\% cuối.
 
-\subsection{Mô hình đối chứng và thí nghiệm loại bỏ thành phần}
+\subsection{Mô hình đối chứng}
 
 Đối chứng chính là bộ dự báo trực tiếp mức chung/cục bộ. Mô hình mã hóa cùng lịch sử và sinh gia số cho cả 24 chân trời từ biểu diễn cố định; dự báo tại bước $k$ không được đưa lại làm đầu vào của bước $k+1$. Đối chứng trực tiếp và \modelname{} nhận đúng cùng lịch sử \pmfine, cùng sáu biến khí tượng lịch sử và cùng trường khí tượng đã quan trắc trong 24 bước đích. Khác biệt về tập thông tin vì thế không thể giải thích chênh lệch giữa hai mô hình. Kích thước ẩn, nhúng chân trời và nhúng trạm được tăng để đối chứng có 72.630 tham số, gần bằng 72.435 tham số của \modelname. So sánh này kiểm soát số tham số và tập thông tin; tốc độ học được chọn riêng trên tập xác thực cho từng kiến trúc.
-
-Kiến trúc \modelname{} chính không có nhánh trễ tường minh. Trong giai đoạn lựa chọn mô hình, chúng tôi còn huấn luyện một ứng viên thêm trạng thái lùi một bước vào đầu vận chuyển. Ứng viên này không cải thiện MAE, nên nhánh trễ được loại theo nguyên tắc ưu tiên mô hình gọn. Hai phép bỏ vận chuyển và bỏ nguồn/mất mát đã được chạy trong ma trận ứng viên có trễ; do đó, Bảng~\ref{tab:ablation} luôn ghi rõ mốc tham chiếu của từng chênh lệch thay vì coi mọi dòng là phép loại bỏ trực tiếp từ kiến trúc cuối.
 
 \subsection{Huấn luyện và chỉ số}
 
@@ -425,63 +421,8 @@ Bảng~\ref{tab:main-validation} là phép so sánh trung tâm, hoàn toàn trê
     \textbf{\modelname{}} & 72.435 & $\mathbf{16.7630\pm0.0252}$ & --- \\
     \bottomrule
   \end{tabular}
-  \begin{tablenotes}[flushleft]\footnotesize
-    \item Mỗi dòng được huấn luyện và chọn điểm kiểm tra mô hình độc lập; so sánh trong bảng chỉ dùng tập xác thực.
-  \end{tablenotes}
   \end{threeparttable}
 \end{table}
-
-\subsection{Thành phần nào tạo ra cải thiện?}
-
-Kết quả ở Bảng~\ref{tab:ablation} và Hình~\ref{fig:ablation} tách rõ lựa chọn kiến trúc khỏi phân tích cơ chế. Thêm một nhánh trễ cố định vào \modelname{} làm MAE tăng nhẹ $0.0038$; kiểm định theo khối thời gian cũng không phát hiện lợi ích của nhánh này. Vì vậy, kiến trúc chính giữ phép vận chuyển từ trạng thái hiện tại và loại nhánh trễ. Trong ma trận ứng viên có trễ, bỏ nguồn/mất mát làm MAE tăng $3.6224$, còn bỏ vận chuyển làm tăng $0.5132$. Hai phép thử này cho thấy nguồn/mất mát đóng vai trò lớn hơn, trong khi vận chuyển vẫn bổ sung thông tin dự báo.
-
-\begin{table}[H]
-  \centering
-  \caption{Lựa chọn kiến trúc và thí nghiệm thành phần trên tập xác thực. Mỗi cấu hình được huấn luyện độc lập với ba hạt giống.}
-  \label{tab:ablation}
-  \begin{tabular}{@{}lrr@{}}
-    \toprule
-    Cấu hình & MAE 1--72 giờ & Chênh lệch và mốc tham chiếu \\
-    \midrule
-    \textbf{\modelname{}} & $\mathbf{16.7630\pm0.0252}$ & --- \\
-    \modelname{} + trễ cố định một bước & $16.7668\pm0.0238$ & $+0.0038$ so với \modelname{} \\
-    Ứng viên có trễ, bỏ vận chuyển & $17.2800\pm0.0238$ & $+0.5132$ so với ứng viên có trễ \\
-    Ứng viên có trễ, bỏ nguồn/mất mát & $20.3892\pm0.0252$ & $+3.6224$ so với ứng viên có trễ \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-% Nguồn số liệu: paper/artifacts/retrained_ablation.json
-\begin{figure}[H]
-  \centering
-  \resizebox{\textwidth}{!}{%
-  \begin{tikzpicture}
-    \begin{axis}[
-      width=0.9\textwidth,
-      height=6.2cm,
-      xmin=-0.30,xmax=3.95,
-      xlabel={$\Delta$ MAE so với \modelname{} ($\unitpm$)},
-      symbolic y coords={adddelay,notransport,direct,nosource},
-      ytick={adddelay,notransport,direct,nosource},
-      yticklabels={Thêm trễ cố định,Ứng viên bỏ vận chuyển,Trực tiếp khớp dung lượng,Ứng viên bỏ nguồn/mất mát},
-      nodes near coords,
-      point meta=x,
-      nodes near coords align={horizontal},
-      every node near coord/.append style={font=\small,/pgf/number format/fixed,/pgf/number format/precision=3},
-      axis line style={draw=tsdark},
-      xmajorgrids,
-      grid style={draw=tsgray!18},
-      xtick={0,0.5,1,1.5,2,2.5,3,3.5},
-      enlarge y limits=0.20
-    ]
-      \draw[dashed,very thick,tsteal] (axis cs:0,adddelay) -- (axis cs:0,nosource);
-      \addplot[only marks,mark=*,mark size=3.5pt,tsblue] coordinates {
-        (0.0038,adddelay) (0.5170,notransport) (2.0990,direct) (3.6262,nosource)};
-    \end{axis}
-  \end{tikzpicture}}
-  \caption{MAE của các cấu hình ứng viên so với \modelname{}. Hai cấu hình bỏ thành phần cùng chứa nhánh trễ; tác động riêng của từng thành phần được tính với ứng viên có trễ làm mốc như Bảng~\ref{tab:ablation}.}
-  \label{fig:ablation}
-\end{figure}
 
 \subsection{Kiểm định theo thời gian và đối chứng ngoài}
 
@@ -501,7 +442,7 @@ Bảng~\ref{tab:external-beijing} cho thấy cùng giả thuyết cơ chế trê
   \end{tabular}
 \end{table}
 
-Kết quả lấy mẫu lại ở Bảng~\ref{tab:block-bootstrap} củng cố quyết định bỏ nhánh trễ: chênh lệch ``ứng viên có trễ trừ \modelname{}'' là $0.0037$ và mọi khoảng tin cậy đều chứa 0. Trên Beijing, \modelname{} có MAE thấp hơn ở 64,9\% gốc dự báo và chênh lệch trung bình theo gốc là $1.6584\unitpm$, nhưng cận dưới vẫn nhỏ hơn 0 ở cả ba độ dài khối. Theo quy tắc diễn giải đã khóa trước khi mở tập kiểm tra, kết quả này được xem là một lần lặp lại có triển vọng, chưa phải bằng chứng kết luận về mọi giai đoạn thời gian.
+Trên Beijing, \modelname{} có MAE thấp hơn ở 64,9\% gốc dự báo và chênh lệch trung bình theo gốc là $1.6584\unitpm$, nhưng cận dưới vẫn nhỏ hơn 0 ở cả ba độ dài khối trong Bảng~\ref{tab:block-bootstrap}. Theo quy tắc diễn giải đã khóa trước khi mở tập kiểm tra, kết quả này được xem là một lần lặp lại có triển vọng, chưa phải bằng chứng kết luận về mọi giai đoạn thời gian.
 
 \begin{table}[H]
   \centering
@@ -512,10 +453,6 @@ Kết quả lấy mẫu lại ở Bảng~\ref{tab:block-bootstrap} củng cố q
     \toprule
     Dữ liệu và cặp so sánh & Độ dài khối & $\Delta\MAE$ & Khoảng tin cậy 95\% & $p$ hai phía \\
     \midrule
-    \multirow{3}{3.6cm}{KnowAir: thêm trễ $-$ \modelname{}} & 1 tuần & 0.0037 & $[-0.0236,\ 0.0322]$ & 0.7769 \\
-    & 2 tuần & 0.0037 & $[-0.0232,\ 0.0329]$ & 0.8065 \\
-    & 4 tuần & 0.0037 & $[-0.0241,\ 0.0362]$ & 0.8591 \\
-    \addlinespace
     \multirow{3}{3.6cm}{Beijing kiểm tra: trực tiếp $-$ \modelname{}} & 1 tuần & 1.6584 & $[-0.0094,\ 3.1954]$ & 0.0516 \\
     & 2 tuần & 1.6584 & $[-0.0527,\ 3.2084]$ & 0.0568 \\
     & 4 tuần & 1.6584 & $[-0.3721,\ 3.3919]$ & 0.1040 \\
@@ -529,59 +466,59 @@ Kết quả lấy mẫu lại ở Bảng~\ref{tab:block-bootstrap} củng cố q
 
 \subsection{Kết quả kiểm tra và ranh giới so sánh}
 
-Để đặt \modelname{} vào toàn cảnh đối chứng, Bảng~\ref{tab:test-reference} tổ chức lại toàn bộ 19 mô hình và AirDDE trong phần KnowAir của Bảng 2 công bố AirDDE \citep{wu2026airdde}. Phân loại trình bày gồm dự báo không gian--thời gian tổng quát, mô hình chuyên cho chất lượng không khí, động lực nơ-ron hoặc có định hướng vật lý, rồi AirDDE như mốc tham chiếu mạnh nhất trong thiết lập chỉ dùng lịch sử. Các số này do AirDDE tổng hợp hoặc chạy lại, không phải kết quả tái lập của nghiên cứu này.
+Để đặt \modelname{} vào toàn cảnh đối chứng, Bảng~\ref{tab:test-reference} tổ chức lại toàn bộ 19 mô hình và AirDDE trong phần KnowAir của Bảng 2 công bố AirDDE \citep{wu2026airdde}. Phân loại trình bày gồm dự báo không gian--thời gian tổng quát, mô hình chuyên cho chất lượng không khí, động lực nơ-ron hoặc có định hướng vật lý, rồi AirDDE như mốc tham chiếu mạnh nhất. Các số này do AirDDE tổng hợp hoặc chạy lại, không phải kết quả tái lập của nghiên cứu này. Với các đối chứng không có mã đường dữ liệu được kiểm toán ở đây, chúng tôi không suy đoán việc chúng có đọc khí tượng đích hay không.
 
-Hai dòng \modelname{} được tách thành khối đề xuất vì dùng khí tượng lõi đã quan trắc trong 72 giờ đích, còn công thức bài toán của AirDDE chỉ nhận nồng độ và yếu tố phụ trợ lịch sử. Ba điểm kiểm tra \modelname{} được chọn bằng MAE xác thực trước lần đánh giá này và đều dùng kiến trúc không trễ trong Hình~\ref{fig:architecture}. Vì hai khối có tập thông tin khác nhau, bảng là bản đồ đối chứng theo ngữ cảnh, không phải bảng xếp hạng đồng nhất; không thể từ đó tuyên bố \modelname{} vượt các phương pháp đã công bố dưới cùng điều kiện đầu vào.
+Kiểm toán mã cài đặt AirDDE xác nhận AirDDE và \modelname{} cùng dùng 24 bước lịch sử, 24 bước đích, phép chia 50/25/25, chuẩn hóa chỉ từ tập huấn luyện và khí tượng đã quan trắc trong toàn bộ giai đoạn đích. Do đó, so sánh trực tiếp hai dòng này là đồng nhất về tập thông tin và giao thức dữ liệu cốt lõi. Trung bình ba mô hình đơn \modelname{} đạt MAE $16.1266$, thấp hơn $0.7934\unitpm$ (4,7\%) so với điểm $16.92$ của AirDDE. Tuy nhiên, AirDDE chỉ công bố số tổng hợp và không cung cấp dự báo khớp theo từng cửa sổ hay phân phối nhiều hạt giống, nên chênh lệch này là so sánh điểm trên cùng giao thức, chưa phải bằng chứng ưu thế thống kê ghép cặp. Dòng ensemble được báo riêng và không dùng để tính mức giảm 4,7\%.
 
 \clearpage
 \begin{table}[H]
   \centering
-  \caption{Các đối chứng KnowAir đã công bố và kết quả \modelname{} dưới các tập thông tin khác nhau. Giá trị của các đối chứng được chép từ bảng mốc so sánh của AirDDE để đặt kết quả vào đúng ngữ cảnh; \modelname{} được báo riêng vì dùng khí tượng đã hiện thực hóa trong giai đoạn đích.}
+  \caption{Các đối chứng KnowAir đã công bố và kết quả \modelname{}. AirDDE và \modelname{} dùng cùng khí tượng đã hiện thực hóa trong 72 giờ đích theo mã công khai; trạng thái đầu vào tương lai của các đối chứng khác không được suy đoán khi chưa kiểm toán mã.}
   \label{tab:test-reference}
   \begin{threeparttable}
   \footnotesize
   \setlength{\tabcolsep}{3.4pt}
   \renewcommand{\arraystretch}{1.03}
-  \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.55cm}>{\raggedright\arraybackslash}Xc rrr@{}}
+  \begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.55cm}>{\raggedright\arraybackslash}Xrrr@{}}
     \toprule
-    Họ phương pháp & Mô hình & \makecell{Khí tượng 72 giờ đích\\đã quan trắc?} & MAE & RMSE & sMAPE \\
+    Họ phương pháp & Mô hình & MAE & RMSE & sMAPE \\
     \midrule
-    \multicolumn{6}{@{}l}{\textit{Khối A --- Các số công bố trong thiết lập đa yếu tố của AirDDE}} \\
+    \multicolumn{5}{@{}l}{\textit{Khối A --- Các số do AirDDE tổng hợp hoặc chạy lại}} \\
     \addlinespace[1pt]
-    \multirow{8}{2.55cm}{\raggedright Dự báo không gian--thời gian} & DCRNN (2018)$^{\dagger}$ & Không & 24.02 & 37.87 & 0.53 \\
-    & STGCN (2018)$^{\dagger}$ & Không & 23.64 & 32.48 & 0.52 \\
-    & ASTGCN (2019)$^{\dagger}$ & Không & 19.92 & 31.39 & 0.44 \\
-    & MTGNN (2020) & Không & 18.92 & 30.34 & 0.41 \\
-    & Crossformer (2023) & Không & 21.11 & 32.97 & 0.44 \\
-    & PDFormer (2023) & Không & 19.06 & 30.66 & 0.41 \\
-    & iTransformer (2024) & Không & 21.03 & 33.14 & 0.46 \\
-    & STMFormer (2025) & Không & 19.57 & 31.12 & 0.44 \\
+    \multirow{8}{2.55cm}{\raggedright Dự báo không gian--thời gian} & DCRNN (2018)$^{\dagger}$ & 24.02 & 37.87 & 0.53 \\
+    & STGCN (2018)$^{\dagger}$  & 23.64 & 32.48 & 0.52 \\
+    & ASTGCN (2019)$^{\dagger}$ & 19.92 & 31.39 & 0.44 \\
+    & MTGNN (2020)  & 18.92 & 30.34 & 0.41 \\
+    & Crossformer (2023) & 21.11 & 32.97 & 0.44 \\
+    & PDFormer (2023)  & 19.06 & 30.66 & 0.41 \\
+    & iTransformer (2024) & 21.03 & 33.14 & 0.46 \\
+    & STMFormer (2025)  & 19.57 & 31.12 & 0.44 \\
     \addlinespace[2pt]
-    \multirow{5}{2.55cm}{\raggedright Chuyên cho chất lượng không khí} & PM2.5-GNN (2020)$^{\dagger}$ & Không & 19.32 & 30.12 & 0.43 \\
-    & GAGNN (2023) & Không & 20.71 & 32.88 & 0.42 \\
-    & AirFormer (2023)$^{\dagger}$ & Không & 19.17 & 30.19 & 0.43 \\
-    & MegaCRN (2023) & Không & 18.77 & 29.45 & 0.42 \\
-    & HimNet (2024) & Không & 20.98 & 33.00 & 0.44 \\
+    \multirow{5}{2.55cm}{\raggedright Chuyên cho chất lượng không khí} & PM2.5-GNN (2020)$^{\dagger}$  & 19.32 & 30.12 & 0.43 \\
+    & GAGNN (2023)  & 20.71 & 32.88 & 0.42 \\
+    & AirFormer (2023)$^{\dagger}$  & 19.17 & 30.19 & 0.43 \\
+    & MegaCRN (2023) & 18.77 & 29.45 & 0.42 \\
+    & HimNet (2024)  & 20.98 & 33.00 & 0.44 \\
     \addlinespace[2pt]
-    \multirow{6}{2.55cm}{\raggedright Động lực nơ-ron / định hướng vật lý} & STGODE (2021) & Không & 21.40 & 33.47 & 0.45 \\
-    & STG-NCDE (2022) & Không & 21.21 & 33.80 & 0.45 \\
-    & STDDE (2024) & Không & 22.85 & 34.26 & 0.46 \\
-    & SGODE (2024) & Không & 20.02 & 32.03 & 0.42 \\
-    & AirPhyNet (2024)$^{\dagger}$ & Không & 21.31 & 31.77 & 0.47 \\
-    & Air-DualODE (2025)$^{\dagger}$ & Không & 18.64 & 29.37 & 0.42 \\
+    \multirow{6}{2.55cm}{\raggedright Động lực nơ-ron / định hướng vật lý} & STGODE (2021) & 21.40 & 33.47 & 0.45 \\
+    & STG-NCDE (2022) & 21.21 & 33.80 & 0.45 \\
+    & STDDE (2024)  & 22.85 & 34.26 & 0.46 \\
+    & SGODE (2024)  & 20.02 & 32.03 & 0.42 \\
+    & AirPhyNet (2024)$^{\dagger}$ & 21.31 & 31.77 & 0.47 \\
+    & Air-DualODE (2025)$^{\dagger}$ & 18.64 & 29.37 & 0.42 \\
     \addlinespace[2pt]
     \rowcolor{tsblue!6}
-    Tham chiếu mạnh nhất & \textbf{AirDDE (2026)} & Không & \textbf{16.92} & \textbf{27.78} & \textbf{0.38} \\
+    Tham chiếu cùng tập thông tin & \textbf{AirDDE (2026)}  & \textbf{16.92} & \textbf{27.78} & \textbf{0.38} \\
     \midrule
-    \multicolumn{6}{@{}l}{\textit{Khối B --- \modelname{}, dùng khí tượng đích đã quan trắc}} \\
+    \multicolumn{5}{@{}l}{\textit{Khối B --- Kết quả của nghiên cứu này dưới cùng tập thông tin với AirDDE}} \\
     \addlinespace[1pt]
-    \multirow{2}{2.55cm}{\raggedright Thiết lập chẩn đoán đề xuất} & \modelname{}, trung bình ba mô hình đơn & Có & $16.1266\pm0.0348$ & --- & --- \\
-    & \modelname{}, trung bình đều ba mô hình & Có & 15.8205 & 24.3253 & 0.3721 \\
+    \multirow{2}{2.55cm}{\raggedright Thiết lập chẩn đoán đề xuất} & \modelname{}, trung bình ba mô hình đơn  & $16.1266\pm0.0348$ & --- & --- \\
+    & \modelname{}, trung bình đều ba mô hình & 15.8205 & 24.3253 & 0.3721 \\
     \bottomrule
   \end{tabularx}
   \begin{tablenotes}[flushleft]\footnotesize
     \item[$\dagger$] AirDDE dẫn các dòng này từ Air-DualODE; các dòng còn lại được tác giả AirDDE chạy bằng mã chính thức trong thiết lập đa yếu tố. ``Crossformer'' là tên đã sửa từ lỗi in ``Corrformer'' trong bảng gốc.
-    \item Cách phân nhóm theo họ do nghiên cứu này tổ chức để trình bày; PDFormer được xếp vào nhóm dự báo không gian--thời gian tổng quát. Cột khí tượng đích dựa trên công thức AirDDE, $\widehat{X}_{T+1:T+H}=F(X_{1:T},M_{1:T};\Theta)$, và Phương trình~\eqref{eq:realized-info}. Không xếp hạng xuyên hai khối.
+    \item Cách phân nhóm theo họ do nghiên cứu này tổ chức để trình bày; PDFormer được xếp vào nhóm dự báo không gian--thời gian tổng quát. Mã AirDDE tại commit \texttt{9277a56} tách khí tượng của cửa sổ đích thành \texttt{y\_cov} và truyền nó vào hạng nguồn/mất mát cùng decoder, dù công thức trong bài chỉ ghi $M_{1:T}$. So sánh 4,7\% dùng trung bình ba mô hình đơn, không dùng ensemble.
   \end{tablenotes}
   \end{threeparttable}
 \end{table}
@@ -614,39 +551,35 @@ Khoảng cách giữa hai tập thông tin xuất hiện rõ ở Bảng~\ref{tab
 
 \textbf{Quan sát 1:} đối chứng trực tiếp gần bằng số tham số kém \modelname{} $2.0990$ MAE. \textbf{Suy luận:} mức cải thiện gắn với cách sinh quỹ đạo tuần tự, không phải với lợi thế về dung lượng hay dữ liệu đầu vào. Kết luận này áp dụng cho cặp kiến trúc được kiểm tra, không phải cho mọi bộ dự báo trực tiếp.
 
-\textbf{Quan sát 2:} trong ma trận ứng viên có trễ, bỏ nguồn/mất mát làm MAE tăng $3.6224$, lớn hơn mức tăng $0.5132$ khi bỏ vận chuyển. \textbf{Suy luận:} với các biến quan trắc hiện có, hạng nguồn/mất mát giải thích phần dự báo lớn hơn hạng tái phân bố không gian. Hạng này có miền chức năng rộng và có thể hấp thụ cả quá trình khí quyển lẫn sai số chưa phân giải; vì vậy, không nên diễn giải nó như phép đo riêng của phát thải hay phản ứng hóa học.
+\textbf{Quan sát 2:} các biến thể chỉ dùng lịch sử dừng quanh $20.5$--$20.9$ MAE. \textbf{Suy luận:} hướng tiếp theo nên tập trung vào trường khí tượng dự báo thực tế và truyền bất định ngoại sinh vào quỹ đạo \pmfine{}, thay vì tiếp tục tăng bộ nhớ xác định.
 
-\textbf{Quan sát 3:} các biến thể chỉ dùng lịch sử dừng quanh $20.5$--$20.9$ MAE. \textbf{Suy luận:} hướng tiếp theo nên tập trung vào trường khí tượng dự báo thực tế và truyền bất định ngoại sinh vào quỹ đạo \pmfine{}, thay vì tiếp tục tăng bộ nhớ xác định.
-
-\textbf{Quan sát 4:} trên Beijing, \modelname{} giảm MAE và sMAPE nhưng làm tăng RMSE; khoảng tin cậy theo khối của MAE vẫn cắt 0. \textbf{Suy luận:} lợi ích ở sai số điển hình lặp lại ngoài KnowAir, còn các sai số lớn cần được xử lý tốt hơn trước khi khái quát hóa sang những mạng trạm khác.
+\textbf{Quan sát 3:} trên Beijing, \modelname{} giảm MAE và sMAPE nhưng làm tăng RMSE; khoảng tin cậy theo khối của MAE vẫn cắt 0. \textbf{Suy luận:} lợi ích ở sai số điển hình lặp lại ngoài KnowAir, còn các sai số lớn cần được xử lý tốt hơn trước khi khái quát hóa sang những mạng trạm khác.
 
 \subsection{Vì sao phân rã đơn giản vẫn hữu ích?}
 
 Phân rã trong Phương trình~\eqref{eq:source} tạo ra hai ``đường thoát'' rõ ràng cho sai số. Nếu toàn mạng cùng tích tụ, $S^g_k$ có thể nâng nền vùng mà không buộc vận chuyển làm việc trái vai trò. Nếu một trạm lệch khỏi nền, $S^{\ell}_{i,k}$ xử lý phần cục bộ nhưng không làm đổi trung bình mạng. Tương tự, phép trừ trung bình ở $\bm{T}_k$ ngăn đầu vận chuyển học một độ lệch chung dễ tối ưu nhưng khó diễn giải. Đây là thiên kiến cấu trúc mềm: nó tổ chức không gian nghiệm, không áp đặt một phương trình hóa học hoàn chỉnh.
 
-Ưu điểm thực nghiệm của thiết kế là có thể kiểm tra trực tiếp. Các phép loại bỏ nguồn, vận chuyển và dạng sinh trực tiếp tạo thành một chuỗi lập luận nhất quán: tiến hóa tuần tự có ích trên KnowAir; nguồn/mất mát giải thích phần lớn lợi ích; vận chuyển có đóng góp nhỏ hơn nhưng rõ ràng. Đối chứng Beijing bổ sung một phép thử chuyển miền cho cùng kiến trúc \modelname{}.
+Phân rã này cung cấp một thiên kiến cấu trúc rõ ràng, còn bằng chứng thực nghiệm trung tâm của nghiên cứu nằm ở so sánh với mô hình sinh trực tiếp gần bằng dung lượng. Đối chứng Beijing bổ sung một phép thử chuyển miền cho cùng kiến trúc \modelname{}.
 
 \section{Phạm vi áp dụng và hướng mở rộng}
 
 \begin{enumerate}
   \item \textbf{Khí tượng giai đoạn đích.} Thiết lập chính cô lập bài toán dự báo \pmfine{} bằng cách điều kiện hóa trên khí tượng tương lai đã quan trắc. Một hệ thống vận hành cần thay đầu vào này bằng trường dự báo khí tượng được hiệu chỉnh và truyền bất định của nó vào dự báo nồng độ.
-  \item \textbf{So sánh AirDDE không đồng nhất đầu vào.} AirDDE báo $16.92/27.78/0.38$ trên KnowAir \citep{wu2026airdde}, nhưng chỉ có số tổng hợp và một tập thông tin khác. Không thể thực hiện kiểm định ghép cặp hay tuyên bố hơn kém công bằng.
+  \item \textbf{So sánh AirDDE chỉ có điểm tổng hợp.} Kiểm toán mã xác nhận AirDDE và \modelname{} có cùng tập thông tin cùng giao thức dữ liệu KnowAir cốt lõi, nên chênh lệch MAE điểm $16.92$ so với $16.1266$ là so sánh đầu vào công bằng. Tuy nhiên, AirDDE không phát hành dự báo theo cửa sổ, độ biến thiên qua hạt giống hay checkpoint gắn với số công bố; vì vậy không thể lập khoảng tin cậy ghép cặp hoặc kết luận ưu thế thống kê. Việc bài AirDDE viết công thức chỉ dùng lịch sử trong khi mã đọc khí tượng đích cũng làm giảm độ minh bạch của giao thức \citep{wu2026airdde}.
   \item \textbf{Độ rộng dữ liệu ngoài.} Beijing bổ sung một mạng độc lập và giữ đúng tập thông tin, nhưng chỉ có 12 trạm; khoảng tin cậy MAE còn cắt 0 và RMSE đi theo hướng bất lợi. Cần thêm các mạng trạm ở vùng khí hậu và chế độ phát thải khác để đo độ bền chuyển miền.
   \item \textbf{Ràng buộc bảo toàn xấp xỉ.} $\sum_iT_{i,k}=0$ bảo toàn trung bình số học trên các trạm, không phải khối lượng vật chất trong một miền liên tục. Mật độ trạm, thể tích đại diện, biên mở và phản ứng hóa học đều chưa được mô hình hóa đầy đủ.
-  \item \textbf{Bất định thống kê.} Phương pháp lấy mẫu lại theo khối đã xử lý phụ thuộc thời gian cho phép thử thêm trễ trên KnowAir và cặp trực tiếp/\modelname{} trên Beijing. Chuỗi dự báo của đối chứng trực tiếp khớp dung lượng trên KnowAir không được giữ cùng điểm kiểm tra, nên chênh lệch trung tâm $2.0990$ được báo qua ba hạt giống nhưng chưa có khoảng tin cậy ghép cặp theo thời gian.
+  \item \textbf{Bất định thống kê.} Phương pháp lấy mẫu lại theo khối đã xử lý phụ thuộc thời gian cho cặp trực tiếp/\modelname{} trên Beijing. Chuỗi dự báo của đối chứng trực tiếp khớp dung lượng trên KnowAir không được giữ cùng điểm kiểm tra, nên chênh lệch trung tâm $2.0990$ được báo qua ba hạt giống nhưng chưa có khoảng tin cậy ghép cặp theo thời gian.
 \end{enumerate}
 
 \section{Khả năng tái lập}
 
-Mã nguồn lưu toàn bộ phép biến đổi dữ liệu, kiến trúc, hàm mất mát và lệnh huấn luyện. Ma trận thí nghiệm được chạy với hạt giống 42, 43 và 44; mỗi cấu hình có điểm kiểm tra riêng. Gói bài báo lưu bảng số liệu nguồn ở định dạng JSON và mã băm SHA-256 của sáu điểm kiểm tra lõi. Các điểm kiểm tra \modelname{} ban đầu còn chứa một cột đầu vào trễ luôn bằng 0; thủ tục cắt cột bất hoạt tạo kiến trúc 72.435 tham số và đã được kiểm tra cho dự báo cùng chỉ số chính xác với mô hình không trễ trước khi cắt. Đối với Beijing, tệp giao thức ghi mã băm của 12 tệp nguồn, quy tắc xử lý thiếu và phép chia tập; một tệp riêng lưu mã băm điểm kiểm tra cùng quy tắc diễn giải trước lần đánh giá cuối. Bảng~\ref{tab:hyperparameters} ở Phụ lục ghi các siêu tham số cần thiết để tái lập.
+Mã nguồn lưu toàn bộ phép biến đổi dữ liệu, kiến trúc, hàm mất mát và lệnh huấn luyện. Thí nghiệm được chạy với hạt giống 42, 43 và 44; mỗi cấu hình có điểm kiểm tra riêng. Gói bài báo lưu bảng số liệu nguồn ở định dạng JSON và mã băm SHA-256 của ba điểm kiểm tra lõi. Đối với Beijing, tệp giao thức ghi mã băm của 12 tệp nguồn, quy tắc xử lý thiếu và phép chia tập; một tệp riêng lưu mã băm điểm kiểm tra cùng quy tắc diễn giải trước lần đánh giá cuối. Bảng~\ref{tab:hyperparameters} ở Phụ lục ghi các siêu tham số cần thiết để tái lập.
 
-Để tránh rò rỉ theo thời gian, chuẩn hóa chỉ khớp trên phần huấn luyện; cửa sổ lịch sử và đích nằm trọn trong từng phân đoạn; điểm kiểm tra mô hình được chọn bằng MAE xác thực. Lệnh tái lập ma trận KnowAir là \texttt{python scripts/run\_retrained\_ablations.py}; kết quả kiểm tra \modelname{} dùng \texttt{scripts/evaluate\_tsr\_primary.py}; đối chứng ngoài dùng \texttt{scripts/prepare\_beijing\_multisite.py} và \texttt{scripts/evaluate\_external\_pair.py}; kiểm định theo thời gian dùng \texttt{scripts/paired\_block\_bootstrap.py}. Ma trận KnowAir tham chiếu chạy với Python 3.11, PyTorch 2.8.0 và CUDA 12.8; thí nghiệm Beijing chạy với Python 3.11, PyTorch 2.13.0 và MPS. Kiến trúc được chọn trên tập xác thực; do tập kiểm tra KnowAir đã từng được xem trong quá trình phát triển dự án, các số kiểm tra được trình bày như đánh giá cuối của cấu hình đã chọn, không dùng để tinh chỉnh thêm. Kho ẩn danh cùng định danh phiên bản lưu trữ sẽ được bổ sung trước khi nộp.
+Để tránh rò rỉ theo thời gian, chuẩn hóa chỉ khớp trên phần huấn luyện; cửa sổ lịch sử và đích nằm trọn trong từng phân đoạn; điểm kiểm tra mô hình được chọn bằng MAE xác thực. Kết quả kiểm tra \modelname{} dùng \texttt{scripts/evaluate\_tsr\_primary.py}; đối chứng ngoài dùng \texttt{scripts/prepare\_beijing\_multisite.py} và \texttt{scripts/evaluate\_external\_pair.py}. Mã AirDDE công khai được kiểm toán từ \url{https://github.com/w2obin/airdde-aaai} tại commit \texttt{9277a56db4bcc0e5e6a3a78bc9aa2b8df09d9774}; kết luận về khí tượng đích dựa trên đường dữ liệu và lời gọi mô hình ở phiên bản này. Ma trận KnowAir tham chiếu chạy với Python 3.11, PyTorch 2.8.0 và CUDA 12.8; thí nghiệm Beijing chạy với Python 3.11, PyTorch 2.13.0 và MPS. Kiến trúc được chọn trên tập xác thực; do tập kiểm tra KnowAir đã từng được xem trong quá trình phát triển dự án, các số kiểm tra được trình bày như đánh giá cuối của cấu hình đã chọn, không dùng để tinh chỉnh thêm. Kho ẩn danh cùng định danh phiên bản lưu trữ sẽ được bổ sung trước khi nộp.
 
 \section{Kết luận}
 
-Nghiên cứu cho thấy dự báo \pmfine{} 72 giờ có điều kiện trên khí tượng đích được hưởng lợi khi được viết như một quá trình tiến hóa trạng thái thay vì sinh toàn bộ chân trời trực tiếp từ một biểu diễn lịch sử cố định. Bằng chứng trung tâm là đối chứng trực tiếp gần bằng dung lượng và dùng cùng tập thông tin: MAE xác thực KnowAir giảm từ $18.8620$ xuống $16.7630$. Trong toán tử hồi quy, nguồn/mất mát là thành phần đóng góp lớn nhất, còn vận chuyển theo gió bổ sung một mức cải thiện nhỏ hơn. Trên Beijing độc lập, lợi ích lặp lại ở MAE và sMAPE nhưng không ở RMSE, qua đó xác định rõ hướng cần cải thiện đối với các sai số cực trị.
-
-Kiến trúc cuối không chứa nhánh trễ cố định vì phép thử thêm nhánh này không cải thiện dự báo. Phân rã vận chuyển--nguồn vì thế giữ được câu chuyện cơ chế gọn và có thể kiểm tra. Khoảng cách lớn của các biến thể chỉ dùng lịch sử đặt ưu tiên tiếp theo vào khí tượng dự báo thực tế và lan truyền bất định ngoại sinh.
+Nghiên cứu cho thấy dự báo \pmfine{} 72 giờ có điều kiện trên khí tượng đích được hưởng lợi khi được viết như một quá trình tiến hóa trạng thái thay vì sinh toàn bộ chân trời trực tiếp từ một biểu diễn lịch sử cố định. Bằng chứng trung tâm là đối chứng trực tiếp gần bằng dung lượng và dùng cùng tập thông tin: MAE xác thực KnowAir giảm từ $18.8620$ xuống $16.7630$. Trên Beijing độc lập, lợi ích lặp lại ở MAE và sMAPE nhưng không ở RMSE, qua đó xác định rõ hướng cần cải thiện đối với các sai số cực trị. Khoảng cách lớn của các biến thể chỉ dùng lịch sử đặt ưu tiên tiếp theo vào khí tượng dự báo thực tế và lan truyền bất định ngoại sinh.
 
 \FloatBarrier
 \appendix
@@ -655,7 +588,7 @@ Kiến trúc cuối không chứa nhánh trễ cố định vì phép thử thê
 
 \begin{table}[h]
   \centering
-  \caption{Siêu tham số của ma trận thí nghiệm loại bỏ chính. Hai tốc độ học phản ánh đúng lệnh chạy đã đóng băng.}
+  \caption{Siêu tham số của \modelname{} và đối chứng trực tiếp.}
   \label{tab:hyperparameters}
   \begin{tabular}{@{}lll@{}}
     \toprule

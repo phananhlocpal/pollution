@@ -102,10 +102,8 @@ def test_circular_block_bootstrap_is_reproducible_and_paired():
 def test_all_retained_checkpoints_match_the_canonical_architecture():
     root = Path(__file__).resolve().parents[1]
     manifest = json.loads((root / "paper/CHECKPOINTS.json").read_text())
-    for family, expected_lag in (("delay_ablation", True),
-                                 ("tsr_primary", False)):
+    for family in ("tsr_primary",):
         entry = manifest[family]
-        assert entry["use_lagged_transport"] is expected_lag
         assert sorted(entry["sha256"]) == [
             "seed_42.pt", "seed_43.pt", "seed_44.pt"
         ]
@@ -118,31 +116,12 @@ def test_all_retained_checkpoints_match_the_canonical_architecture():
             assert digest == expected_hash
             checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
             assert checkpoint["architecture"] == "transport_source_recurrent"
-            assert checkpoint["config"]["use_lagged_transport"] is expected_lag
             model = TransportSourceRecurrentForecaster(
                 root / "data/benchmarks/knowair/city.txt",
                 stations=184, **checkpoint["config"],
             )
             model.load_state_dict(checkpoint["model_state"])
-            if family == "tsr_primary":
-                assert sum(parameter.numel() for parameter in model.parameters()) == 72_435
-
-
-def test_primary_tsr_has_no_delay_input_parameters(tmp_path):
-    city = tmp_path / "city.txt"
-    city.write_text("0 a 100 30\n1 b 101 31\n2 c 102 32\n")
-    primary = TransportSourceRecurrentForecaster(
-        city, stations=3, horizon=4, hidden_dim=8,
-        station_dim=3, month_dim=2, operator_dim=4,
-    )
-    delayed = TransportSourceRecurrentForecaster(
-        city, stations=3, horizon=4, hidden_dim=8,
-        station_dim=3, month_dim=2, operator_dim=4,
-        use_lagged_transport=True,
-    )
-    assert primary.use_lagged_transport is False
-    assert primary.local_cell.input_size + 1 == delayed.local_cell.input_size
-    assert primary.transport_head[0].in_features + 1 == delayed.transport_head[0].in_features
+            assert sum(parameter.numel() for parameter in model.parameters()) == 72_435
 
 
 def test_frozen_correction_starts_as_exact_baseline(tmp_path):
@@ -204,10 +183,8 @@ def test_history_only_recurrent_does_not_read_future_weather(tmp_path, mode):
         assert torch.allclose(first["weather_prediction"], second["weather_prediction"])
     if mode == "latent":
         assert "weather_prediction" not in first
-        assert model.use_lagged_transport is False
     if mode == "factorized":
         assert torch.allclose(first["weather_prediction"], second["weather_prediction"])
-        assert model.use_lagged_transport is False
         changed_pm = {**batch, "x": batch["x"].clone()}
         changed_pm["x"][..., 0] += 1000
         with torch.no_grad():

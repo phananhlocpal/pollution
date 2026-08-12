@@ -1,22 +1,11 @@
 {
-  "delay_ablation": {
-    "role": "validation-only ablation that adds a fixed one-step delay",
-    "path": "paper/checkpoints/core_meteo_lagged",
-    "use_lagged_transport": true,
-    "sha256": {
-      "seed_42.pt": "2f595098ae2a9addb69a94798c816dd9d0e13009e3386cab8808d6176bf0ac23",
-      "seed_43.pt": "f85a2d8d38f232d03e1e5c2cba17fb37f46d5a462e11a1c659a9b1a0f49e34f5",
-      "seed_44.pt": "21c402c6ee362928cceb69d4bc69ed1c6da72be2941fe7487712fb1bb3efdfe2"
-    }
-  },
   "tsr_primary": {
-    "role": "canonical no-delay method used for validation and KnowAir test reporting",
+    "role": "canonical method used for validation and test reporting",
     "path": "paper/checkpoints/tsr_primary",
-    "use_lagged_transport": false,
     "sha256": {
-      "seed_42.pt": "a7ecbc716c526d05f3a4cb38aee48317b9db01776082d2348a94bc2b6327477c",
-      "seed_43.pt": "41318ea44a0f14faa6e6f7a8693129293f65a1956bd631b2172dd67e4dab30c1",
-      "seed_44.pt": "0d186db00b49208bac3cb3d54dabd994ebec10811363b4b996a3c3747af86de5"
+      "seed_42.pt": "4cb36f7deeadbd01e8d93de2d50e1ed1f0cebcd73cbae872aa1252c53fbae142",
+      "seed_43.pt": "861136f22ef93d6e0020ace427b31a0f4172d457fe8104f0f44e25c6752f3523",
+      "seed_44.pt": "886e2fa7ab4ff3d27f24201e992c3bfc691b66d4cc071b66917162b8068e4ce4"
     }
   }
 }

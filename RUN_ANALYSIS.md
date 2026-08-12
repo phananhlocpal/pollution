@@ -13,9 +13,8 @@ the China-AQI corrected test remains unopened.
 
 ## KnowAir validation ablations
 
-The publication workflow retrains primary TSR, the fixed-delay candidate,
-transport and source/sink knockouts, and a parameter-matched direct baseline with
-seeds 42, 43 and 44. The primary training default has no explicit delay.
+The publication workflow retrains primary TSR, transport and source/sink
+knockouts, and a parameter-matched direct baseline with seeds 42, 43 and 44.
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\run_retrained_ablations.py
@@ -24,19 +23,26 @@ seeds 42, 43 and 44. The primary training default has no explicit delay.
 Outputs are written under `artifacts/`; the canonical frozen numbers already used
 by the manuscript are in `paper/RESULTS.json`.
 
-## Paired temporal uncertainty
-
-```powershell
-.\.venv\Scripts\python.exe scripts\paired_block_bootstrap.py --device cuda
-```
-
-This compares the fixed-delay candidate against primary TSR at aligned KnowAir
-forecast origins with 1-, 2- and 4-week circular blocks.
-
 Evaluate the retained primary checkpoints on KnowAir with:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts\evaluate_tsr_primary.py --split test --allow-test --output paper/artifacts/tsr_primary_test.json --device cuda
+```
+
+## Forecasted-weather cascade
+
+This validation-only experiment compares repeating the last observed weather
+state with forecasting all 24 future weather steps using a causal GRU and feeding
+those predictions into TSR. Neither branch reads observed target-period weather.
+
+```powershell
+.\.venv\Scripts\python.exe scripts\run_forecasted_weather_experiment.py --device cuda
+```
+
+For per-channel forecast skill and oracle diagnostics after the learned run:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\diagnose_weather_forcing.py --checkpoint artifacts/forecasted_weather/learned/seed_43/best_model.pt --output artifacts/forecasted_weather/weather_diagnostics.json --device cuda
 ```
 
 ## UCI Beijing external replication
@@ -45,8 +51,8 @@ Evaluate the retained primary checkpoints on KnowAir with:
 .\.venv\Scripts\python.exe scripts\prepare_beijing_multisite.py
 .\.venv\Scripts\python.exe -m common_local.train --panel-npz data/processed/beijing_multisite_3h.npz --expected-stations 12 --seeds 42 43 44 --epochs 30 --patience 6 --batch-size 256 --lr 0.003 --scheduler --hidden-dim 84 --horizon-dim 20 --station-dim 10 --dropout 0.1 --gru-layers 1 --loss l1 --output-dir artifacts/external_beijing/direct --device cuda
 .\.venv\Scripts\python.exe -m common_local.train_dynamics --panel-npz data/processed/beijing_multisite_3h.npz --expected-stations 12 --seeds 42 43 44 --epochs 30 --patience 6 --batch-size 256 --disable-auxiliary --disable-month --output-dir artifacts/external_beijing/tsr_primary --device cuda
-.\.venv\Scripts\python.exe scripts\evaluate_external_pair.py --split val --output paper/artifacts/beijing_external_validation_masked.json --device cuda
-.\.venv\Scripts\python.exe scripts\evaluate_external_pair.py --split test --unlock-test --output paper/artifacts/beijing_external_test.json --device cuda
+.\.venv\Scripts\python.exe scripts\evaluate_external_pair.py --split val --output paper/artifacts/beijing_external_validation_primary.json --device cuda
+.\.venv\Scripts\python.exe scripts\evaluate_external_pair.py --split test --unlock-test --output paper/artifacts/beijing_external_test_primary.json --device cuda
 ```
 
 The pre-test decision and checkpoint hashes are in

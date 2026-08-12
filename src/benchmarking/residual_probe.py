@@ -102,8 +102,6 @@ def build_features(root, starts, coordinates):
         "neighbor_trend": neighbor_trend,
         "regional_factor": regional,
         "wind_aligned_innovation": wind_aligned_innovation(raw, starts - 1, coordinates, weights),
-        "wind_lagged_innovation_3h": wind_aligned_innovation(raw, starts - 2, coordinates, weights),
-        "wind_lagged_innovation_6h": wind_aligned_innovation(raw, starts - 3, coordinates, weights),
     }
     return raw, current, static, labels
 

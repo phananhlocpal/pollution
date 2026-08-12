@@ -1,18 +1,13 @@
 # Transport--Source Recurrent Operator
 
 Repo phục vụ manuscript về dự báo PM2.5 nhiều bước trên KnowAir. Research đã được
-freeze; kiến trúc paper là recurrent state evolution với wind-aligned transport,
-common/local source--sink và không có explicit one-step lag, event expert hay memory
-module.
+freeze; kiến trúc paper là recurrent state evolution với wind-aligned transport
+và common/local source--sink.
 
 ## Kết luận chính
 
 - TSR đạt validation MAE `16.7630`, tốt hơn matched direct model `18.8620`
   khoảng `2.0990` MAE.
-- Trong ma trận ứng viên có trễ, bỏ source/sink làm xấu `+3.6224`; bỏ transport
-  làm xấu `+0.5132`.
-- Thêm explicit lag vào TSR làm xấu `+0.0038`; block-bootstrap không cho thấy
-  lợi ích, nên kiến trúc chính không chứa nhánh này.
 - Trên KnowAir test, ba mô hình TSR đạt `16.1266 +/- 0.0348`; uniform ensemble
   đạt `15.8205 / 24.3253 / 0.3721` cho MAE/RMSE/sMAPE.
 - Các history-only forcing/memory variants dừng quanh `20.5--20.9` hoặc tệ hơn;
@@ -24,8 +19,8 @@ Các số, claim constraints và artifact dùng để viết paper nằm trong [
 
 ## Ranh giới so sánh
 
-Checkpoint chính nằm trong `paper/checkpoints/tsr_primary/` và không có đầu vào
-trễ. Chúng được chọn trên validation trước khi đánh giá KnowAir test; kết quả đầy
+Checkpoint chính nằm trong `paper/checkpoints/tsr_primary/`. Chúng được chọn trên
+validation trước khi đánh giá KnowAir test; kết quả đầy
 đủ nằm trong `paper/artifacts/tsr_primary_test.json`.
 
 Model dùng realized target-period core meteorology. Vì vậy comparison với AirDDE

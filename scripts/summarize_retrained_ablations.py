@@ -13,7 +13,6 @@ VARIANTS = {
     "full_recurrent": "artifacts/retrained_ablation_full",
     "no_transport": "artifacts/retrained_ablation_no_transport",
     "no_source_sink": "artifacts/retrained_ablation_no_source",
-    "no_lagged_transport": "artifacts/retrained_ablation_no_lag",
     "matched_direct": "artifacts/common_local_matched",
 }
 PERIODS = ("day1_1_24h", "day2_25_48h", "day3_49_72h", "overall_1_72h")

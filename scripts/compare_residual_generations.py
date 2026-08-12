@@ -54,8 +54,7 @@ def main():
     after_horizon = np.mean(after_horizon, axis=0)
 
     probe_signals = (
-        "wind_aligned_innovation", "wind_lagged_innovation_3h",
-        "boundary_layer_height", "ventilation",
+        "wind_aligned_innovation", "boundary_layer_height", "ventilation",
     )
     probe = []
     for horizon in (3, 24, 72):

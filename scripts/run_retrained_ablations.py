@@ -21,16 +21,13 @@ def run(*args):
 
 def main():
     run("-m", "common_local.train_dynamics", *COMMON,
-        "--enable-lagged-transport",
         "--output-dir", "artifacts/retrained_ablation_full")
     run("-m", "common_local.train_dynamics", *COMMON,
-        "--enable-lagged-transport", "--disable-transport",
+        "--disable-transport",
         "--output-dir", "artifacts/retrained_ablation_no_transport")
     run("-m", "common_local.train_dynamics", *COMMON,
-        "--enable-lagged-transport", "--disable-source",
+        "--disable-source",
         "--output-dir", "artifacts/retrained_ablation_no_source")
-    run("-m", "common_local.train_dynamics", *COMMON, "--disable-lagged-transport",
-        "--output-dir", "artifacts/retrained_ablation_no_lag")
     run(
         "-m", "common_local.train", "--seeds", "42", "43", "44",
         "--epochs", "30", "--patience", "6", "--batch-size", "256",

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Evaluate the frozen no-lag TSR family and its uniform ensemble."""
+"""Evaluate the frozen primary TSR family and its uniform ensemble."""
 
 from __future__ import annotations
 
@@ -29,8 +29,6 @@ def sha256(path: Path) -> str:
 def predict(checkpoint_path: Path, root: Path, panel, loader, device):
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     config = checkpoint.get("config", {})
-    if config.get("use_lagged_transport", True):
-        raise ValueError(f"Primary TSR checkpoint unexpectedly enables delay: {checkpoint_path}")
     model = TransportSourceRecurrentForecaster(
         root / "data/benchmarks/knowair/city.txt",
         stations=len(panel.stations),
@@ -92,7 +90,6 @@ def main():
             "path": str(checkpoint_path.relative_to(root)),
             "sha256": sha256(checkpoint_path),
             "architecture": checkpoint.get("architecture"),
-            "use_lagged_transport": checkpoint["config"]["use_lagged_transport"],
             "metrics": report["overall_1_72h"],
         })
 
@@ -100,11 +97,11 @@ def main():
     ensemble_report = validation_report(ensemble, truth_reference, panel.cadence_hours)
     overall_key = "overall_1_72h"
     payload = {
-        "method": "Transport-Source Recurrent Operator (primary no-delay specification)",
+        "method": "Transport-Source Recurrent Operator",
         "split": args.split,
         "test_accessed": args.split == "test",
         "selection": "architecture and checkpoints selected on validation before this evaluation",
-        "test_history": "KnowAir test had previously been viewed at project level for a legacy delayed checkpoint family",
+        "test_history": "KnowAir test had previously been viewed at project level during model development",
         "information_set": "72-hour PM2.5 history and realized target-period meteorology",
         "seeds": args.seeds,
         "single_models": {

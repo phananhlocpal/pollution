@@ -147,7 +147,7 @@
       "seed": 42,
       "architecture": "transport_source_recurrent",
       "path": "artifacts/external_beijing/tsr_primary/seed_42/best_model.pt",
-      "sha256": "6b90f998e26d1110de66b2a8dc258de5e01389ad685132f7e518c80f4b6ee0e5",
+      "sha256": "0e370f6dd27066c116a00c1c4d578c380e0248e250c2a01801afc6f59b31fb7f",
       "overall": {
         "mae": 30.25145019306741,
         "rmse": 51.415994653981755,
@@ -162,7 +162,7 @@
       "seed": 43,
       "architecture": "transport_source_recurrent",
       "path": "artifacts/external_beijing/tsr_primary/seed_43/best_model.pt",
-      "sha256": "b76a13b8c5f27c90caf68ebac3289fdfe2c6ee7585bf824792378e6db2bc4ef4",
+      "sha256": "a0de307cbb25c2489b7248a1fe1b4a91b6d30d8035559fbb991ab03623bc6ffb",
       "overall": {
         "mae": 31.559981870738806,
         "rmse": 53.26820989100879,
@@ -177,7 +177,7 @@
       "seed": 44,
       "architecture": "transport_source_recurrent",
       "path": "artifacts/external_beijing/tsr_primary/seed_44/best_model.pt",
-      "sha256": "a15550f124d7c7790e5b73e32c163e13a7bb8b9fec8aff41453884ef7237cba2",
+      "sha256": "5cda103905384b6fa792d7534e403c8e44232242c82cb84023e8364fc006cd9c",
       "overall": {
         "mae": 30.806347306876397,
         "rmse": 51.552104578729164,

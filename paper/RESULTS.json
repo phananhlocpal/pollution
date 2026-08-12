@@ -3,7 +3,6 @@
   "final_method_specification": {
     "name": "Transport-Source Recurrent Operator",
     "feature_track": "core meteorology with realized target-period forcing",
-    "explicit_lagged_transport": false,
     "parameter_count": 72435,
     "event_expert": false,
     "memory_module": false
@@ -25,16 +24,10 @@
       "day_mae": [13.755231919554262, 16.51649074402126, 17.189733346077638]
     }
   },
-  "retrained_validation_ablation": {
-    "primary_no_delay_mae": 16.7630189259847,
-    "fixed_delay_ablation_mae": 16.76679039001465,
-    "fixed_delay_ablation_delta_vs_primary": 0.003771464029949101,
+  "main_validation_comparison": {
+    "primary_mae": 16.7630189259847,
     "matched_direct_mae": 18.861982345581055,
-    "matched_direct_delta_vs_primary": 2.098963419596355,
-    "no_transport_mae": 17.279978434244793,
-    "no_transport_delta_vs_delay_ablation": 0.5131880442301444,
-    "no_source_sink_mae": 20.389183680216473,
-    "no_source_sink_delta_vs_delay_ablation": 3.622393290201824
+    "matched_direct_delta_vs_primary": 2.098963419596355
   },
   "history_only_validation": {
     "weather_persistence": 20.79450798034668,
@@ -46,8 +39,6 @@
     "factorized_v3_system_identification": 20.569299697875977,
     "analog_weather_mixture": 22.139614917491834,
     "analog_pm_increment": 29.311225980102016,
-    "adaptive_delay_rolling_gain": -0.1602325439453125,
-    "edge_time_residual_rolling_gain": 0.00845595343493836,
     "global_source_memory_best_rolling_gain": 0.02819538116455078
   },
   "published_airdde_references": {
