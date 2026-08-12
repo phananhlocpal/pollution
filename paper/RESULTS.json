@@ -4,41 +4,37 @@
     "name": "Transport-Source Recurrent Operator",
     "feature_track": "core meteorology with realized target-period forcing",
     "explicit_lagged_transport": false,
+    "parameter_count": 72435,
     "event_expert": false,
     "memory_module": false
   },
-  "provenance_warning": {
-    "headline_test_checkpoint_explicit_lagged_transport": true,
-    "no_lag_test_result_available": false,
-    "instruction": "Do not relabel the existing headline test result as no-lag."
-  },
   "knowair": {
-    "no_lag_validation_three_seed": {
+    "primary_validation_three_seed": {
       "mae_mean": 16.7630189259847,
       "mae_std": 0.02515105574665494
     },
-    "lag_enabled_core_meteo_test_three_seed": {
-      "mae_by_seed": [16.25837516784668, 16.044116973876953, 16.083044052124023],
-      "mae_mean": 16.128512064615887,
-      "mae_std": 0.09315980753392577
+    "primary_test_three_seed": {
+      "mae_by_seed": [16.157804963697682, 16.077939211703594, 16.14391207064021],
+      "mae_mean": 16.12655208201383,
+      "mae_std": 0.03483926414479638
     },
-    "lag_enabled_uniform_ensemble_test": {
-      "mae": 15.812956809997559,
-      "rmse": 24.308374404907227,
-      "smape": 0.37177011370658875,
-      "day_mae": [13.698369979858398, 16.511491775512695, 17.228994369506836]
+    "primary_uniform_ensemble_test": {
+      "mae": 15.820485336551052,
+      "rmse": 24.325301939349654,
+      "smape": 0.3721261122525825,
+      "day_mae": [13.755231919554262, 16.51649074402126, 17.189733346077638]
     }
   },
   "retrained_validation_ablation": {
-    "full_recurrent_mae": 16.76679039001465,
+    "primary_no_delay_mae": 16.7630189259847,
+    "fixed_delay_ablation_mae": 16.76679039001465,
+    "fixed_delay_ablation_delta_vs_primary": 0.003771464029949101,
     "matched_direct_mae": 18.861982345581055,
-    "matched_direct_delta": 2.0951919555664062,
+    "matched_direct_delta_vs_primary": 2.098963419596355,
     "no_transport_mae": 17.279978434244793,
-    "no_transport_delta": 0.5131880442301444,
+    "no_transport_delta_vs_delay_ablation": 0.5131880442301444,
     "no_source_sink_mae": 20.389183680216473,
-    "no_source_sink_delta": 3.622393290201824,
-    "no_lagged_transport_mae": 16.7630189259847,
-    "no_lagged_transport_delta": -0.003771464029949101
+    "no_source_sink_delta_vs_delay_ablation": 3.622393290201824
   },
   "history_only_validation": {
     "weather_persistence": 20.79450798034668,
@@ -61,7 +57,6 @@
   "claim_constraints": [
     "Realized future meteorology prevents an identical-information AirDDE claim.",
     "Published AirDDE aggregates do not permit paired significance testing.",
-    "KnowAir test was previously viewed at project level.",
-    "Corrected China-AQI 96x24 test remains unopened."
+    "KnowAir test was previously viewed at project level."
   ]
 }

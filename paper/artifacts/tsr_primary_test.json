@@ -1,0 +1,124 @@
+{
+  "method": "Transport-Source Recurrent Operator (primary no-delay specification)",
+  "split": "test",
+  "test_accessed": true,
+  "selection": "architecture and checkpoints selected on validation before this evaluation",
+  "test_history": "KnowAir test had previously been viewed at project level for a legacy delayed checkpoint family",
+  "information_set": "72-hour PM2.5 history and realized target-period meteorology",
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "single_models": {
+    "mae_mean": 16.12655208201383,
+    "mae_std": 0.03483926414479638,
+    "metrics_by_seed": [
+      {
+        "seed": 42,
+        "path": "paper/checkpoints/tsr_primary/seed_42.pt",
+        "sha256": "a7ecbc716c526d05f3a4cb38aee48317b9db01776082d2348a94bc2b6327477c",
+        "architecture": "transport_source_recurrent",
+        "use_lagged_transport": false,
+        "metrics": {
+          "mae": 16.157804963697682,
+          "rmse": 24.708962713012998,
+          "mape": 51.39225863798889,
+          "smape": 0.38311029690165577,
+          "smape_masked": 0.38276178053765164,
+          "points": 12693264
+        }
+      },
+      {
+        "seed": 43,
+        "path": "paper/checkpoints/tsr_primary/seed_43.pt",
+        "sha256": "41318ea44a0f14faa6e6f7a8693129293f65a1956bd631b2172dd67e4dab30c1",
+        "architecture": "transport_source_recurrent",
+        "use_lagged_transport": false,
+        "metrics": {
+          "mae": 16.077939211703594,
+          "rmse": 24.649675607720553,
+          "mape": 51.31581837052287,
+          "smape": 0.3776375416429513,
+          "smape_masked": 0.37728784564173884,
+          "points": 12693264
+        }
+      },
+      {
+        "seed": 44,
+        "path": "paper/checkpoints/tsr_primary/seed_44.pt",
+        "sha256": "0d186db00b49208bac3cb3d54dabd994ebec10811363b4b996a3c3747af86de5",
+        "architecture": "transport_source_recurrent",
+        "use_lagged_transport": false,
+        "metrics": {
+          "mae": 16.14391207064021,
+          "rmse": 24.739140943185376,
+          "mape": 51.230246464666195,
+          "smape": 0.3808621671981674,
+          "smape_masked": 0.38051316626376785,
+          "points": 12693264
+        }
+      }
+    ]
+  },
+  "uniform_ensemble": {
+    "mae": 15.820485336551052,
+    "rmse": 24.325301939349654,
+    "mape": 50.339406047268376,
+    "smape": 0.3721261122525825,
+    "smape_masked": 0.3717752282761526,
+    "points": 12693264
+  },
+  "uniform_ensemble_day_mae": [
+    13.755231919554262,
+    16.51649074402126,
+    17.189733346077638
+  ],
+  "checkpoints": [
+    {
+      "seed": 42,
+      "path": "paper/checkpoints/tsr_primary/seed_42.pt",
+      "sha256": "a7ecbc716c526d05f3a4cb38aee48317b9db01776082d2348a94bc2b6327477c",
+      "architecture": "transport_source_recurrent",
+      "use_lagged_transport": false,
+      "metrics": {
+        "mae": 16.157804963697682,
+        "rmse": 24.708962713012998,
+        "mape": 51.39225863798889,
+        "smape": 0.38311029690165577,
+        "smape_masked": 0.38276178053765164,
+        "points": 12693264
+      }
+    },
+    {
+      "seed": 43,
+      "path": "paper/checkpoints/tsr_primary/seed_43.pt",
+      "sha256": "41318ea44a0f14faa6e6f7a8693129293f65a1956bd631b2172dd67e4dab30c1",
+      "architecture": "transport_source_recurrent",
+      "use_lagged_transport": false,
+      "metrics": {
+        "mae": 16.077939211703594,
+        "rmse": 24.649675607720553,
+        "mape": 51.31581837052287,
+        "smape": 0.3776375416429513,
+        "smape_masked": 0.37728784564173884,
+        "points": 12693264
+      }
+    },
+    {
+      "seed": 44,
+      "path": "paper/checkpoints/tsr_primary/seed_44.pt",
+      "sha256": "0d186db00b49208bac3cb3d54dabd994ebec10811363b4b996a3c3747af86de5",
+      "architecture": "transport_source_recurrent",
+      "use_lagged_transport": false,
+      "metrics": {
+        "mae": 16.14391207064021,
+        "rmse": 24.739140943185376,
+        "mape": 51.230246464666195,
+        "smape": 0.3808621671981674,
+        "smape_masked": 0.38051316626376785,
+        "points": 12693264
+      }
+    }
+  ]
+}

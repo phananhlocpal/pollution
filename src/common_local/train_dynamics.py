@@ -66,7 +66,7 @@ def run_seed(args, seed):
         "event_expert": args.event_expert,
         "use_transport": not args.disable_transport,
         "use_source": not args.disable_source,
-        "use_lagged_transport": not args.disable_lagged_transport,
+        "use_lagged_transport": args.use_lagged_transport,
         "use_auxiliary": not args.disable_auxiliary,
         "use_month": not args.disable_month,
         "future_weather_mode": args.future_weather_mode,
@@ -150,8 +150,14 @@ def run_seed(args, seed):
         "config": config, "parameter_count": parameters,
         "best_epoch": best_epoch, "best_validation_mae": best,
         "validation": validation, "history": history,
-        "training_split": "official released train split" if args.gagnn_dir else "first 50%",
-        "validation_split": "official released validation split" if args.gagnn_dir else "next 25%",
+        "training_split": (
+            "official released train split" if args.gagnn_dir else
+            "first 70%" if args.panel_npz else "first 50%"
+        ),
+        "validation_split": (
+            "official released validation split" if args.gagnn_dir else
+            "next 10%" if args.panel_npz else "next 25%"
+        ),
         "gagnn_protocol": args.gagnn_protocol if args.gagnn_dir else None,
         "test_accessed": False,
     }
@@ -183,7 +189,16 @@ def main():
     parser.add_argument("--initialize-from")
     parser.add_argument("--disable-transport", action="store_true")
     parser.add_argument("--disable-source", action="store_true")
-    parser.add_argument("--disable-lagged-transport", action="store_true")
+    delay = parser.add_mutually_exclusive_group()
+    delay.add_argument(
+        "--enable-lagged-transport", dest="use_lagged_transport",
+        action="store_true", help="Enable the one-step delay ablation",
+    )
+    delay.add_argument(
+        "--disable-lagged-transport", dest="use_lagged_transport",
+        action="store_false", help=argparse.SUPPRESS,
+    )
+    parser.set_defaults(use_lagged_transport=False)
     parser.add_argument("--disable-auxiliary", action="store_true")
     parser.add_argument("--disable-month", action="store_true")
     parser.add_argument(

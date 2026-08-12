@@ -12,7 +12,7 @@ import numpy as np
 import torch
 from torch.utils.data import DataLoader
 
-from .data import CommonLocalWindowDataset, load_panel
+from .data import CommonLocalWindowDataset, load_panel, load_standard_panel
 from .losses import common_local_loss
 from .metrics import validation_report
 from .model import CommonLocalForecaster
@@ -41,14 +41,15 @@ def _loader(dataset, batch_size, seed, shuffle):
 
 def _run_epoch(model, loader, panel, device, optimizer=None, loss_kind="l1"):
     training = optimizer is not None; model.train(training)
-    loss_sum = batches = 0; predictions, truths = [], []
+    loss_sum = batches = 0; predictions, truths, validity = [], [], []
     started = time.perf_counter()
     context = torch.enable_grad if training else torch.no_grad
     with context():
         for batch in loader:
             batch = move_batch(batch, device); output = model(batch)
             loss, _ = common_local_loss(
-                output, batch["y"], float(panel.mean[0]), float(panel.std[0]), loss_kind
+                output, batch["y"], float(panel.mean[0]), float(panel.std[0]), loss_kind,
+                batch.get("y_valid"),
             )
             if "weather_prediction" in output and "future_weather_target" in batch:
                 weather_loss = torch.nn.functional.smooth_l1_loss(
@@ -78,6 +79,8 @@ def _run_epoch(model, loader, panel, device, optimizer=None, loss_kind="l1"):
             else:
                 predictions.append(output["prediction"].detach().cpu().numpy())
                 truths.append(batch["y"].detach().cpu().numpy())
+                if "y_valid" in batch:
+                    validity.append(batch["y_valid"].detach().cpu().numpy())
             loss_sum += float(loss.detach()); batches += 1
     result = {"loss": loss_sum / max(batches, 1),
               "seconds": time.perf_counter() - started}
@@ -85,22 +88,33 @@ def _run_epoch(model, loader, panel, device, optimizer=None, loss_kind="l1"):
         prediction = np.concatenate(predictions) * panel.std[0] + panel.mean[0]
         truth = np.concatenate(truths) * panel.std[0] + panel.mean[0]
         result["metrics"] = validation_report(
-            prediction, truth, cadence_hours=getattr(panel, "cadence_hours", 3)
+            prediction, truth, cadence_hours=getattr(panel, "cadence_hours", 3),
+            valid_mask=np.concatenate(validity) if validity else None,
         )
     return result
 
 
 def run_seed(args, seed):
     random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
-    panel = load_panel(args.root); device = choose_device(args.device)
-    train_set = CommonLocalWindowDataset(panel, "train", args.max_train_samples)
-    val_set = CommonLocalWindowDataset(panel, "val", args.max_eval_samples)
+    panel = (
+        load_standard_panel(Path(args.root) / args.panel_npz, args.expected_stations)
+        if args.panel_npz else load_panel(args.root)
+    )
+    device = choose_device(args.device)
+    train_set = CommonLocalWindowDataset(
+        panel, "train", args.max_train_samples, args.history, args.horizon
+    )
+    val_set = CommonLocalWindowDataset(
+        panel, "val", args.max_eval_samples, args.history, args.horizon
+    )
     train_loader = _loader(train_set, args.batch_size, seed, True)
     val_loader = _loader(val_set, args.batch_size, seed, False)
     config = {
         "hidden_dim": args.hidden_dim, "horizon_dim": args.horizon_dim,
         "station_dim": args.station_dim, "dropout": args.dropout,
         "gru_layers": args.gru_layers,
+        "weather_dim": panel.values.shape[-1] - 1,
+        "horizon": args.horizon,
     }
     model = CommonLocalForecaster(stations=len(panel.stations), **config).to(device)
     output = Path(args.output_dir) / f"seed_{seed}"; output.mkdir(parents=True, exist_ok=True)
@@ -151,7 +165,8 @@ def run_seed(args, seed):
         "config": config, "loss": args.loss,
         "best_epoch": best_epoch, "best_validation_mae": best,
         "validation": validation, "history": history,
-        "training_split": "first 50%", "validation_split": "next 25%",
+        "training_split": "first 70%" if args.panel_npz else "first 50%",
+        "validation_split": "next 10%" if args.panel_npz else "next 25%",
         "test_accessed": False,
     }
     (output / "metrics.json").write_text(json.dumps(payload, indent=2))
@@ -162,6 +177,10 @@ def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".")
     parser.add_argument("--output-dir", default="artifacts/common_local")
+    parser.add_argument("--panel-npz", help="External standardized panel NPZ, relative to root")
+    parser.add_argument("--expected-stations", type=int)
+    parser.add_argument("--history", type=int, default=24)
+    parser.add_argument("--horizon", type=int, default=24)
     parser.add_argument("--seeds", nargs="+", type=int, default=[42, 43, 44])
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--patience", type=int, default=5)

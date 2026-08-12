@@ -46,6 +46,7 @@ class Panel:
     auxiliary_std: np.ndarray | None = None
     auxiliary_feature_names: tuple[str, ...] = AUXILIARY_FEATURES
     coordinates: np.ndarray | None = None
+    target_valid: np.ndarray | None = None
 
 
 def load_panel(root: str | Path = ".") -> Panel:
@@ -173,6 +174,10 @@ def load_standard_panel(path: str | Path, expected_stations: int | None = None) 
             if "station_ids" in archive.files else [str(i) for i in range(target.shape[1])]
         )
         cadence_hours = int(np.asarray(archive["cadence_hours"]).item()) if "cadence_hours" in archive.files else 1
+        target_valid = (
+            np.asarray(archive["target_valid"], dtype=bool)
+            if "target_valid" in archive.files else np.isfinite(target) & (target >= 1e-4)
+        )
     if target.ndim != 2 or weather.ndim != 3 or weather.shape[:2] != target.shape:
         raise ValueError(f"Expected target [T,N] and weather [T,N,W], got {target.shape}, {weather.shape}")
     if expected_stations is not None and target.shape[1] != expected_stations:
@@ -181,12 +186,18 @@ def load_standard_panel(path: str | Path, expected_stations: int | None = None) 
         raise ValueError("The frozen operator requires weather speed/sin/cos columns 3/4/5")
     if coordinates.shape != (target.shape[1], 2):
         raise ValueError(f"Expected coordinates {(target.shape[1], 2)}, got {coordinates.shape}")
+    if target_valid.shape != target.shape:
+        raise ValueError(f"Expected target_valid {target.shape}, got {target_valid.shape}")
     physical = np.concatenate((target[..., None], weather), axis=-1)
     if not np.isfinite(physical).all() or not np.isfinite(coordinates).all():
         raise ValueError("External panel contains non-finite values")
     train_end, val_end = int(len(physical) * .70), int(len(physical) * .80)
-    train = physical[:train_end].reshape(-1, physical.shape[-1])
-    mean, std = train.mean(0), train.std(0)
+    train_weather = weather[:train_end].reshape(-1, weather.shape[-1])
+    train_target = target[:train_end][target_valid[:train_end]]
+    if not len(train_target):
+        raise ValueError("External training split has no observed target")
+    mean = np.concatenate(([train_target.mean()], train_weather.mean(0)))
+    std = np.concatenate(([train_target.std()], train_weather.std(0)))
     if np.any(std < 1e-8):
         raise ValueError("Degenerate train-fitted feature scale")
     values = ((physical - mean) / std).astype(np.float32)
@@ -196,6 +207,7 @@ def load_standard_panel(path: str | Path, expected_stations: int | None = None) 
         mean=mean, std=std, stations=station_ids, feature_names=feature_names,
         auxiliary=None, auxiliary_mean=None, auxiliary_std=None,
         auxiliary_feature_names=(), coordinates=coordinates, cadence_hours=cadence_hours,
+        target_valid=target_valid,
     )
 
 
@@ -428,12 +440,15 @@ class CommonLocalWindowDataset(Dataset):
             "y": torch.from_numpy(future[..., 0]),
             "forecast_start": torch.tensor(future_start, dtype=torch.long),
         }
+        if self.panel.target_valid is not None:
+            sample["y_valid"] = torch.from_numpy(
+                self.panel.target_valid[future_start:future_start + self.horizon]
+            )
         if self.panel.auxiliary is not None:
             sample["future_auxiliary"] = torch.from_numpy(
                 self.panel.auxiliary[future_start:future_start + self.horizon]
             )
-            sample["future_month"] = torch.from_numpy(
-                self.month_by_time[future_start:future_start + self.horizon].copy()
-            ).long()
+        sample["future_month"] = torch.from_numpy(
+            self.month_by_time[future_start:future_start + self.horizon].copy()
+        ).long()
         return sample
-

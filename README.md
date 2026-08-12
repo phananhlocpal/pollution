@@ -7,22 +7,26 @@ module.
 
 ## Kết luận chính
 
-- Recurrent evolution đạt validation MAE `16.7668`, tốt hơn matched direct model
-  `18.8620` khoảng `2.0952` MAE.
-- Bỏ source/sink làm xấu `+3.6224`; bỏ transport làm xấu `+0.5132`.
-- Bỏ explicit lag sau retraining thay đổi `-0.0038`, nên branch này không được giữ.
+- TSR đạt validation MAE `16.7630`, tốt hơn matched direct model `18.8620`
+  khoảng `2.0990` MAE.
+- Trong ma trận ứng viên có trễ, bỏ source/sink làm xấu `+3.6224`; bỏ transport
+  làm xấu `+0.5132`.
+- Thêm explicit lag vào TSR làm xấu `+0.0038`; block-bootstrap không cho thấy
+  lợi ích, nên kiến trúc chính không chứa nhánh này.
+- Trên KnowAir test, ba mô hình TSR đạt `16.1266 +/- 0.0348`; uniform ensemble
+  đạt `15.8205 / 24.3253 / 0.3721` cho MAE/RMSE/sMAPE.
 - Các history-only forcing/memory variants dừng quanh `20.5--20.9` hoặc tệ hơn;
   future exogenous forcing uncertainty là limitation chính.
+- Trên UCI Beijing độc lập, TSR giảm point estimate MAE và sMAPE nhưng tăng RMSE;
+  khoảng tin cậy thời gian vẫn cắt 0 nên kết quả chỉ mang tính gợi ý.
 
 Các số, claim constraints và artifact dùng để viết paper nằm trong [`paper/`](paper/README.md).
 
-## Cảnh báo provenance
+## Ranh giới so sánh
 
-Headline KnowAir test `16.1285 +/- 0.0932` và uniform ensemble
-`15.8130 / 24.3084 / 0.3718` đến từ frozen core-meteorology checkpoints **có**
-`use_lagged_transport=true`. Kiến trúc no-lag được chọn cuối cùng hiện chỉ có
-validation result `16.7630 +/- 0.0252`; không được relabel headline test thành
-no-lag result.
+Checkpoint chính nằm trong `paper/checkpoints/tsr_primary/` và không có đầu vào
+trễ. Chúng được chọn trên validation trước khi đánh giá KnowAir test; kết quả đầy
+đủ nằm trong `paper/artifacts/tsr_primary_test.json`.
 
 Model dùng realized target-period core meteorology. Vì vậy comparison với AirDDE
 chỉ là published point estimates dưới information setting khác, không phải fair

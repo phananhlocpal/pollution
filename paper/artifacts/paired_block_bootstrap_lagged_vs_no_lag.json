@@ -1,0 +1,112 @@
+{
+  "origins": 2875,
+  "reference_origin_mae": 16.770637397139474,
+  "proposed_origin_mae": 16.766903732159328,
+  "mean_mae_difference_reference_minus_proposed": 0.003733664980147553,
+  "reference_better_origin_fraction": 0.5363478260869565,
+  "proposed_better_origin_fraction": 0.4636521739130435,
+  "block_sensitivity": {
+    "56": {
+      "block_length_origins": 56,
+      "mean_mae_difference_reference_minus_proposed": 0.003733664980147553,
+      "ci95_percentile": [
+        -0.02359148260774411,
+        0.03215776390198462
+      ],
+      "two_sided_bootstrap_p": 0.7769223077692231,
+      "probability_difference_positive": 0.6116
+    },
+    "112": {
+      "block_length_origins": 112,
+      "mean_mae_difference_reference_minus_proposed": 0.003733664980147553,
+      "ci95_percentile": [
+        -0.023181982534963386,
+        0.03291165998529233
+      ],
+      "two_sided_bootstrap_p": 0.8065193480651934,
+      "probability_difference_positive": 0.5968
+    },
+    "224": {
+      "block_length_origins": 224,
+      "mean_mae_difference_reference_minus_proposed": 0.003733664980147553,
+      "ci95_percentile": [
+        -0.024090686837665617,
+        0.03622859905678118
+      ],
+      "two_sided_bootstrap_p": 0.8591140885911409,
+      "probability_difference_positive": 0.5705
+    }
+  },
+  "comparison": "TSR plus fixed one-step delay minus primary TSR",
+  "reference_label": "TSR plus fixed one-step delay",
+  "proposed_label": "primary TSR",
+  "split": "KnowAir validation (chronological 50--75%)",
+  "test_accessed": false,
+  "cadence_hours": 3,
+  "history_steps": 24,
+  "horizon_steps": 24,
+  "aggregation": "MAE over valid horizon-station targets within each origin; mean over three seed-specific error series before temporal resampling",
+  "bootstrap": "circular moving-block percentile bootstrap",
+  "replicates": 10000,
+  "bootstrap_seed": 20260812,
+  "block_lengths_origins": [
+    56,
+    112,
+    224
+  ],
+  "block_lengths_hours": [
+    168,
+    336,
+    672
+  ],
+  "checkpoints": [
+    {
+      "seed": 42,
+      "label": "reference",
+      "architecture": "transport_source_recurrent",
+      "path": "paper/checkpoints/core_meteo_lagged/seed_42.pt",
+      "sha256": "2f595098ae2a9addb69a94798c816dd9d0e13009e3386cab8808d6176bf0ac23",
+      "origin_mae": 16.798022534751624
+    },
+    {
+      "seed": 42,
+      "label": "proposed",
+      "architecture": "transport_source_recurrent",
+      "path": "paper/checkpoints/tsr_primary/seed_42.pt",
+      "sha256": "a7ecbc716c526d05f3a4cb38aee48317b9db01776082d2348a94bc2b6327477c",
+      "origin_mae": 16.785294854627224
+    },
+    {
+      "seed": 43,
+      "label": "reference",
+      "architecture": "transport_source_recurrent",
+      "path": "paper/checkpoints/core_meteo_lagged/seed_43.pt",
+      "sha256": "f85a2d8d38f232d03e1e5c2cba17fb37f46d5a462e11a1c659a9b1a0f49e34f5",
+      "origin_mae": 16.754229960331223
+    },
+    {
+      "seed": 43,
+      "label": "proposed",
+      "architecture": "transport_source_recurrent",
+      "path": "paper/checkpoints/tsr_primary/seed_43.pt",
+      "sha256": "41318ea44a0f14faa6e6f7a8693129293f65a1956bd631b2172dd67e4dab30c1",
+      "origin_mae": 16.738087909031716
+    },
+    {
+      "seed": 44,
+      "label": "reference",
+      "architecture": "transport_source_recurrent",
+      "path": "paper/checkpoints/core_meteo_lagged/seed_44.pt",
+      "sha256": "21c402c6ee362928cceb69d4bc69ed1c6da72be2941fe7487712fb1bb3efdfe2",
+      "origin_mae": 16.75965969633558
+    },
+    {
+      "seed": 44,
+      "label": "proposed",
+      "architecture": "transport_source_recurrent",
+      "path": "paper/checkpoints/tsr_primary/seed_44.pt",
+      "sha256": "0d186db00b49208bac3cb3d54dabd994ebec10811363b4b996a3c3747af86de5",
+      "origin_mae": 16.777328432819047
+    }
+  ]
+}

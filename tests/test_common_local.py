@@ -15,6 +15,11 @@ from common_local.losses import common_local_loss
 from common_local.metrics import validation_report
 from common_local.model import CommonLocalForecaster
 from common_local.dynamics import TransportSourceRecurrentForecaster
+from common_local.paired_statistics import (
+    circular_block_bootstrap,
+    origin_mae,
+    summarize_paired_errors,
+)
 
 
 def _panel():
@@ -75,24 +80,69 @@ def test_validation_report_supports_external_six_hour_horizon():
     assert report["horizon_hours"] == [1, 2, 3, 4, 5, 6]
 
 
+def test_origin_mae_preserves_forecast_origin_axis():
+    truth = np.full((3, 2, 2), 10.0)
+    prediction = truth + np.arange(3)[:, None, None]
+    assert np.allclose(origin_mae(prediction, truth), [0.0, 1.0, 2.0])
+
+
+def test_circular_block_bootstrap_is_reproducible_and_paired():
+    difference = np.linspace(0.5, 1.5, 60)
+    first = circular_block_bootstrap(difference, 7, replicates=100, seed=19)
+    second = circular_block_bootstrap(difference, 7, replicates=100, seed=19)
+    assert np.array_equal(first, second)
+    summary = summarize_paired_errors(
+        difference + 2.0, np.full(60, 2.0), block_lengths=(7,),
+        replicates=100, seed=19,
+    )
+    assert summary["mean_mae_difference_reference_minus_proposed"] == pytest.approx(1.0)
+    assert summary["block_sensitivity"]["7"]["ci95_percentile"][0] > 0.0
+
+
 def test_all_retained_checkpoints_match_the_canonical_architecture():
     root = Path(__file__).resolve().parents[1]
     manifest = json.loads((root / "paper/CHECKPOINTS.json").read_text())
-    for family, expected_lag in (("core_meteo_lagged", True),
-                                 ("core_meteo_no_lag", False)):
+    for family, expected_lag in (("delay_ablation", True),
+                                 ("tsr_primary", False)):
         entry = manifest[family]
         assert entry["use_lagged_transport"] is expected_lag
         assert sorted(entry["sha256"]) == [
             "seed_42.pt", "seed_43.pt", "seed_44.pt"
         ]
         for filename, expected_hash in entry["sha256"].items():
-            checkpoint_path = root / "paper/checkpoints" / family / filename
+            checkpoint_path = root / entry.get(
+                "path", f"paper/checkpoints/{family}"
+            ) / filename
             assert checkpoint_path.exists(), f"missing retained checkpoint: {checkpoint_path}"
             digest = hashlib.sha256(checkpoint_path.read_bytes()).hexdigest()
             assert digest == expected_hash
             checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
             assert checkpoint["architecture"] == "transport_source_recurrent"
             assert checkpoint["config"]["use_lagged_transport"] is expected_lag
+            model = TransportSourceRecurrentForecaster(
+                root / "data/benchmarks/knowair/city.txt",
+                stations=184, **checkpoint["config"],
+            )
+            model.load_state_dict(checkpoint["model_state"])
+            if family == "tsr_primary":
+                assert sum(parameter.numel() for parameter in model.parameters()) == 72_435
+
+
+def test_primary_tsr_has_no_delay_input_parameters(tmp_path):
+    city = tmp_path / "city.txt"
+    city.write_text("0 a 100 30\n1 b 101 31\n2 c 102 32\n")
+    primary = TransportSourceRecurrentForecaster(
+        city, stations=3, horizon=4, hidden_dim=8,
+        station_dim=3, month_dim=2, operator_dim=4,
+    )
+    delayed = TransportSourceRecurrentForecaster(
+        city, stations=3, horizon=4, hidden_dim=8,
+        station_dim=3, month_dim=2, operator_dim=4,
+        use_lagged_transport=True,
+    )
+    assert primary.use_lagged_transport is False
+    assert primary.local_cell.input_size + 1 == delayed.local_cell.input_size
+    assert primary.transport_head[0].in_features + 1 == delayed.transport_head[0].in_features
 
 
 def test_frozen_correction_starts_as_exact_baseline(tmp_path):

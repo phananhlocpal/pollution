@@ -22,11 +22,14 @@ def _masked_error(prediction, target, mask, kind="l1"):
     return (error * mask).sum() / mask.sum().clamp_min(1)
 
 
-def common_local_loss(output, target, pm_mean, pm_std, kind="l1"):
+def common_local_loss(output, target, pm_mean, pm_std, kind="l1", valid_mask=None):
     valid = target * pm_std + pm_mean >= 1e-4
+    if valid_mask is not None:
+        valid = valid & valid_mask.bool()
     prediction = output["prediction"]
     central = _masked_error(prediction, target, valid, kind)
-    common_target = target.mean(2)
+    valid_float = valid.to(target.dtype)
+    common_target = (target * valid_float).sum(2) / valid_float.sum(2).clamp_min(1)
     common = _masked_error(output["common_prediction"], common_target, valid.any(2), kind)
     residual_target = target - common_target[:, :, None]
     residual = _masked_error(output["residual_prediction"], residual_target, valid, kind)
@@ -47,4 +50,3 @@ def common_local_loss(output, target, pm_mean, pm_std, kind="l1"):
         "residual": float(residual.detach()),
         "increment": float(increment.detach()),
     }
-
