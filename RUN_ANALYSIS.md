@@ -25,6 +25,17 @@ are held fixed across levels and the test split is not accessed:
 
 This writes `artifacts/full_history_precursors/validation.json`.
 
+### Oracle spatial mosaic and temporal warp
+
+Retrieve region-local PM continuation patches from train and allow validation
+truth to select a donor (and optionally a ±12-hour shift) for diagnosis only:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\evaluate_oracle_mosaic.py
+```
+
+This writes `artifacts/oracle_mosaic/validation.json`.
+
 The publication workflow retrains primary TSR, transport and source/sink
 knockouts, and a parameter-matched direct baseline with seeds 42, 43 and 44.
 

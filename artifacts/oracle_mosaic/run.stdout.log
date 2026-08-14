@@ -1,0 +1,817 @@
+R=1 region=1/1
+R=4 region=1/4
+R=4 region=2/4
+R=4 region=3/4
+R=4 region=4/4
+R=8 region=1/8
+R=8 region=2/8
+R=8 region=3/8
+R=8 region=4/8
+R=8 region=5/8
+R=8 region=6/8
+R=8 region=7/8
+R=8 region=8/8
+R=16 region=1/16
+R=16 region=2/16
+R=16 region=3/16
+R=16 region=4/16
+R=16 region=5/16
+R=16 region=6/16
+R=16 region=7/16
+R=16 region=8/16
+R=16 region=9/16
+R=16 region=10/16
+R=16 region=11/16
+R=16 region=12/16
+R=16 region=13/16
+R=16 region=14/16
+R=16 region=15/16
+R=16 region=16/16
+R=32 region=1/32
+R=32 region=2/32
+R=32 region=3/32
+R=32 region=4/32
+R=32 region=5/32
+R=32 region=6/32
+R=32 region=7/32
+R=32 region=8/32
+R=32 region=9/32
+R=32 region=10/32
+R=32 region=11/32
+R=32 region=12/32
+R=32 region=13/32
+R=32 region=14/32
+R=32 region=15/32
+R=32 region=16/32
+R=32 region=17/32
+R=32 region=18/32
+R=32 region=19/32
+R=32 region=20/32
+R=32 region=21/32
+R=32 region=22/32
+R=32 region=23/32
+R=32 region=24/32
+R=32 region=25/32
+R=32 region=26/32
+R=32 region=27/32
+R=32 region=28/32
+R=32 region=29/32
+R=32 region=30/32
+R=32 region=31/32
+R=32 region=32/32
+R=184 region=1/184
+R=184 region=2/184
+R=184 region=3/184
+R=184 region=4/184
+R=184 region=5/184
+R=184 region=6/184
+R=184 region=7/184
+R=184 region=8/184
+R=184 region=9/184
+R=184 region=10/184
+R=184 region=11/184
+R=184 region=12/184
+R=184 region=13/184
+R=184 region=14/184
+R=184 region=15/184
+R=184 region=16/184
+R=184 region=17/184
+R=184 region=18/184
+R=184 region=19/184
+R=184 region=20/184
+R=184 region=21/184
+R=184 region=22/184
+R=184 region=23/184
+R=184 region=24/184
+R=184 region=25/184
+R=184 region=26/184
+R=184 region=27/184
+R=184 region=28/184
+R=184 region=29/184
+R=184 region=30/184
+R=184 region=31/184
+R=184 region=32/184
+R=184 region=33/184
+R=184 region=34/184
+R=184 region=35/184
+R=184 region=36/184
+R=184 region=37/184
+R=184 region=38/184
+R=184 region=39/184
+R=184 region=40/184
+R=184 region=41/184
+R=184 region=42/184
+R=184 region=43/184
+R=184 region=44/184
+R=184 region=45/184
+R=184 region=46/184
+R=184 region=47/184
+R=184 region=48/184
+R=184 region=49/184
+R=184 region=50/184
+R=184 region=51/184
+R=184 region=52/184
+R=184 region=53/184
+R=184 region=54/184
+R=184 region=55/184
+R=184 region=56/184
+R=184 region=57/184
+R=184 region=58/184
+R=184 region=59/184
+R=184 region=60/184
+R=184 region=61/184
+R=184 region=62/184
+R=184 region=63/184
+R=184 region=64/184
+R=184 region=65/184
+R=184 region=66/184
+R=184 region=67/184
+R=184 region=68/184
+R=184 region=69/184
+R=184 region=70/184
+R=184 region=71/184
+R=184 region=72/184
+R=184 region=73/184
+R=184 region=74/184
+R=184 region=75/184
+R=184 region=76/184
+R=184 region=77/184
+R=184 region=78/184
+R=184 region=79/184
+R=184 region=80/184
+R=184 region=81/184
+R=184 region=82/184
+R=184 region=83/184
+R=184 region=84/184
+R=184 region=85/184
+R=184 region=86/184
+R=184 region=87/184
+R=184 region=88/184
+R=184 region=89/184
+R=184 region=90/184
+R=184 region=91/184
+R=184 region=92/184
+R=184 region=93/184
+R=184 region=94/184
+R=184 region=95/184
+R=184 region=96/184
+R=184 region=97/184
+R=184 region=98/184
+R=184 region=99/184
+R=184 region=100/184
+R=184 region=101/184
+R=184 region=102/184
+R=184 region=103/184
+R=184 region=104/184
+R=184 region=105/184
+R=184 region=106/184
+R=184 region=107/184
+R=184 region=108/184
+R=184 region=109/184
+R=184 region=110/184
+R=184 region=111/184
+R=184 region=112/184
+R=184 region=113/184
+R=184 region=114/184
+R=184 region=115/184
+R=184 region=116/184
+R=184 region=117/184
+R=184 region=118/184
+R=184 region=119/184
+R=184 region=120/184
+R=184 region=121/184
+R=184 region=122/184
+R=184 region=123/184
+R=184 region=124/184
+R=184 region=125/184
+R=184 region=126/184
+R=184 region=127/184
+R=184 region=128/184
+R=184 region=129/184
+R=184 region=130/184
+R=184 region=131/184
+R=184 region=132/184
+R=184 region=133/184
+R=184 region=134/184
+R=184 region=135/184
+R=184 region=136/184
+R=184 region=137/184
+R=184 region=138/184
+R=184 region=139/184
+R=184 region=140/184
+R=184 region=141/184
+R=184 region=142/184
+R=184 region=143/184
+R=184 region=144/184
+R=184 region=145/184
+R=184 region=146/184
+R=184 region=147/184
+R=184 region=148/184
+R=184 region=149/184
+R=184 region=150/184
+R=184 region=151/184
+R=184 region=152/184
+R=184 region=153/184
+R=184 region=154/184
+R=184 region=155/184
+R=184 region=156/184
+R=184 region=157/184
+R=184 region=158/184
+R=184 region=159/184
+R=184 region=160/184
+R=184 region=161/184
+R=184 region=162/184
+R=184 region=163/184
+R=184 region=164/184
+R=184 region=165/184
+R=184 region=166/184
+R=184 region=167/184
+R=184 region=168/184
+R=184 region=169/184
+R=184 region=170/184
+R=184 region=171/184
+R=184 region=172/184
+R=184 region=173/184
+R=184 region=174/184
+R=184 region=175/184
+R=184 region=176/184
+R=184 region=177/184
+R=184 region=178/184
+R=184 region=179/184
+R=184 region=180/184
+R=184 region=181/184
+R=184 region=182/184
+R=184 region=183/184
+R=184 region=184/184
+{
+  "analysis": "oracle spatial mosaic and temporal warp",
+  "split": "validation",
+  "test_accessed": false,
+  "origins": 2875,
+  "retrieval": {
+    "reference_split": "train",
+    "k": 100,
+    "history_representation": "region-restricted core H1 history features",
+    "pca_components": 64
+  },
+  "temporal_warp_steps": [
+    -4,
+    -3,
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "temporal_warp_hours": [
+    -12,
+    -9,
+    -6,
+    -3,
+    0,
+    3,
+    6,
+    9,
+    12
+  ],
+  "results": {
+    "1": {
+      "region_sizes": [
+        184
+      ],
+      "mean_pca_explained_variance_ratio": 0.7699795961380005,
+      "absolute_unwarped": {
+        "mae": 24.44127864779904,
+        "mean_origin_mae": 24.44706579268332,
+        "median_origin_mae": 21.066363636363636
+      },
+      "residual_unwarped": {
+        "mae": 27.881654901454244,
+        "mean_origin_mae": 27.88864382043501,
+        "median_origin_mae": 24.343863636363636
+      },
+      "absolute_warped": {
+        "mae": 24.092392246214565,
+        "mean_origin_mae": 24.098145534032195,
+        "median_origin_mae": 20.811521887049217,
+        "selected_shift_steps": {
+          "-4": 397,
+          "-3": 151,
+          "-2": 235,
+          "-1": 427,
+          "0": 673,
+          "1": 434,
+          "2": 209,
+          "3": 110,
+          "4": 239
+        }
+      },
+      "residual_warped": {
+        "mae": 27.3469898860024,
+        "mean_origin_mae": 27.35390185811199,
+        "median_origin_mae": 23.953029271613342,
+        "selected_shift_steps": {
+          "-4": 668,
+          "-3": 262,
+          "-2": 403,
+          "-1": 782,
+          "0": 384,
+          "1": 167,
+          "2": 68,
+          "3": 48,
+          "4": 93
+        }
+      }
+    },
+    "4": {
+      "region_sizes": [
+        29,
+        53,
+        37,
+        65
+      ],
+      "mean_pca_explained_variance_ratio": 0.8396844118833542,
+      "absolute_unwarped": {
+        "mae": 22.135524566215178,
+        "mean_origin_mae": 21.83307588346163,
+        "median_origin_mae": 18.849558121882453
+      },
+      "residual_unwarped": {
+        "mae": 24.985649580944365,
+        "mean_origin_mae": 24.55196568868084,
+        "median_origin_mae": 21.472025360187494
+      },
+      "absolute_warped": {
+        "mae": 21.66358288711294,
+        "mean_origin_mae": 21.370753540693876,
+        "median_origin_mae": 18.581178160919542,
+        "selected_shift_steps": {
+          "-4": 1563,
+          "-3": 576,
+          "-2": 732,
+          "-1": 1670,
+          "0": 2852,
+          "1": 1565,
+          "2": 771,
+          "3": 526,
+          "4": 1245
+        }
+      },
+      "residual_warped": {
+        "mae": 24.343217797727952,
+        "mean_origin_mae": 23.925480583601157,
+        "median_origin_mae": 20.941386882923666,
+        "selected_shift_steps": {
+          "-4": 1782,
+          "-3": 938,
+          "-2": 1236,
+          "-1": 2607,
+          "0": 2265,
+          "1": 1065,
+          "2": 471,
+          "3": 331,
+          "4": 805
+        }
+      }
+    },
+    "8": {
+      "region_sizes": [
+        45,
+        14,
+        32,
+        17,
+        21,
+        25,
+        16,
+        14
+      ],
+      "mean_pca_explained_variance_ratio": 0.8647304996848106,
+      "absolute_unwarped": {
+        "mae": 20.793321598827337,
+        "mean_origin_mae": 20.764520214256613,
+        "median_origin_mae": 17.666666666666668
+      },
+      "residual_unwarped": {
+        "mae": 23.206207252759164,
+        "mean_origin_mae": 23.032452703620915,
+        "median_origin_mae": 19.560672268907563
+      },
+      "absolute_warped": {
+        "mae": 20.24167565600117,
+        "mean_origin_mae": 20.218822905283663,
+        "median_origin_mae": 17.277101081812035,
+        "selected_shift_steps": {
+          "-4": 3221,
+          "-3": 1212,
+          "-2": 1440,
+          "-1": 3185,
+          "0": 6091,
+          "1": 3059,
+          "2": 1330,
+          "3": 965,
+          "4": 2497
+        }
+      },
+      "residual_warped": {
+        "mae": 22.465822394446874,
+        "mean_origin_mae": 22.297185149418027,
+        "median_origin_mae": 18.94750511515118,
+        "selected_shift_steps": {
+          "-4": 3240,
+          "-3": 1704,
+          "-2": 2274,
+          "-1": 4707,
+          "0": 4745,
+          "1": 2374,
+          "2": 1143,
+          "3": 897,
+          "4": 1916
+        }
+      }
+    },
+    "16": {
+      "region_sizes": [
+        14,
+        9,
+        16,
+        17,
+        8,
+        10,
+        12,
+        11,
+        23,
+        19,
+        8,
+        7,
+        10,
+        8,
+        7,
+        5
+      ],
+      "mean_pca_explained_variance_ratio": 0.8700822927057743,
+      "absolute_unwarped": {
+        "mae": 19.626346805509574,
+        "mean_origin_mae": 19.313751122919697,
+        "median_origin_mae": 16.42652200740436
+      },
+      "residual_unwarped": {
+        "mae": 21.51110211982961,
+        "mean_origin_mae": 21.186902254022147,
+        "median_origin_mae": 17.932291666666668
+      },
+      "absolute_warped": {
+        "mae": 18.938410594128346,
+        "mean_origin_mae": 18.62880461203825,
+        "median_origin_mae": 15.870492202729045,
+        "selected_shift_steps": {
+          "-4": 6767,
+          "-3": 2597,
+          "-2": 3083,
+          "-1": 6050,
+          "0": 10931,
+          "1": 5901,
+          "2": 2945,
+          "3": 2414,
+          "4": 5312
+        }
+      },
+      "residual_warped": {
+        "mae": 20.626208031919326,
+        "mean_origin_mae": 20.29433728348455,
+        "median_origin_mae": 17.2016919354558,
+        "selected_shift_steps": {
+          "-4": 5944,
+          "-3": 3555,
+          "-2": 4554,
+          "-1": 8422,
+          "0": 8747,
+          "1": 5023,
+          "2": 2736,
+          "3": 2190,
+          "4": 4829
+        }
+      }
+    },
+    "32": {
+      "region_sizes": [
+        7,
+        7,
+        5,
+        9,
+        4,
+        7,
+        3,
+        4,
+        4,
+        8,
+        5,
+        5,
+        6,
+        13,
+        6,
+        8,
+        7,
+        3,
+        6,
+        8,
+        5,
+        5,
+        4,
+        5,
+        7,
+        7,
+        5,
+        5,
+        5,
+        4,
+        5,
+        2
+      ],
+      "mean_pca_explained_variance_ratio": 0.8556998744606972,
+      "absolute_unwarped": {
+        "mae": 18.371492026540857,
+        "mean_origin_mae": 18.132763920716044,
+        "median_origin_mae": 15.166666666666666
+      },
+      "residual_unwarped": {
+        "mae": 19.67662947587638,
+        "mean_origin_mae": 19.401067903638985,
+        "median_origin_mae": 16.0625
+      },
+      "absolute_warped": {
+        "mae": 17.472612122672906,
+        "mean_origin_mae": 17.2461366943395,
+        "median_origin_mae": 14.508333333333333,
+        "selected_shift_steps": {
+          "-4": 14247,
+          "-3": 6139,
+          "-2": 6404,
+          "-1": 11166,
+          "0": 18943,
+          "1": 11102,
+          "2": 6340,
+          "3": 5732,
+          "4": 11927
+        }
+      },
+      "residual_warped": {
+        "mae": 18.57570721007739,
+        "mean_origin_mae": 18.29649696009891,
+        "median_origin_mae": 15.20722186076773,
+        "selected_shift_steps": {
+          "-4": 11629,
+          "-3": 7097,
+          "-2": 8917,
+          "-1": 15126,
+          "0": 16060,
+          "1": 10446,
+          "2": 6305,
+          "3": 5514,
+          "4": 10906
+        }
+      }
+    },
+    "184": {
+      "region_sizes": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "mean_pca_explained_variance_ratio": 0.9649603512624035,
+      "absolute_unwarped": {
+        "mae": 13.72142291168839,
+        "mean_origin_mae": 13.722961100525318,
+        "median_origin_mae": 11.041666666666666
+      },
+      "residual_unwarped": {
+        "mae": 13.67937291235616,
+        "mean_origin_mae": 13.681892611603967,
+        "median_origin_mae": 10.916666666666666
+      },
+      "absolute_warped": {
+        "mae": 12.139701334571471,
+        "mean_origin_mae": 12.14040316143286,
+        "median_origin_mae": 9.833333333333334,
+        "selected_shift_steps": {
+          "-4": 82324,
+          "-3": 44058,
+          "-2": 44039,
+          "-1": 60479,
+          "0": 85921,
+          "1": 61077,
+          "2": 43098,
+          "3": 41574,
+          "4": 66430
+        }
+      },
+      "residual_warped": {
+        "mae": 11.907628401889669,
+        "mean_origin_mae": 11.909071620929508,
+        "median_origin_mae": 9.541666666666666,
+        "selected_shift_steps": {
+          "-4": 68248,
+          "-3": 43765,
+          "-2": 48130,
+          "-1": 70727,
+          "0": 83054,
+          "1": 61569,
+          "2": 44765,
+          "3": 43407,
+          "4": 65335
+        }
+      }
+    }
+  },
+  "r16_gate": {
+    "residual_mosaic_unwarped_below_16_5": false,
+    "residual_mosaic_warped_below_15_5": false
+  },
+  "guardrails": [
+    "Candidates and continuations come from train only.",
+    "Validation PM is used only to select the diagnostic oracle donor and shift.",
+    "Absolute and residual atlases are reported separately; the historical 19.01 reference used TSR weather scenarios and is not a PM-patch baseline."
+  ]
+}

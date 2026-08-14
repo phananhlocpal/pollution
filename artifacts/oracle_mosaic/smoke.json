@@ -1,0 +1,138 @@
+{
+  "analysis": "oracle spatial mosaic and temporal warp",
+  "split": "validation",
+  "test_accessed": false,
+  "origins": 30,
+  "retrieval": {
+    "reference_split": "train",
+    "k": 10,
+    "history_representation": "region-restricted core H1 history features",
+    "pca_components": 16
+  },
+  "temporal_warp_steps": [
+    -4,
+    -3,
+    -2,
+    -1,
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "temporal_warp_hours": [
+    -12,
+    -9,
+    -6,
+    -3,
+    0,
+    3,
+    6,
+    9,
+    12
+  ],
+  "results": {
+    "1": {
+      "region_sizes": [
+        184
+      ],
+      "mean_pca_explained_variance_ratio": 0.5998013019561768,
+      "absolute_unwarped": {
+        "mae": 27.99532152871343,
+        "mean_origin_mae": 28.00212764785483,
+        "median_origin_mae": 24.26149356074168
+      },
+      "residual_unwarped": {
+        "mae": 34.24218683121881,
+        "mean_origin_mae": 34.256599213281035,
+        "median_origin_mae": 29.187492481021167
+      },
+      "absolute_warped": {
+        "mae": 27.287406765468276,
+        "mean_origin_mae": 27.293687972771274,
+        "median_origin_mae": 24.182278622701734,
+        "selected_shift_steps": {
+          "-4": 4,
+          "-3": 4,
+          "-2": 2,
+          "-1": 3,
+          "0": 4,
+          "1": 2,
+          "2": 3,
+          "3": 2,
+          "4": 6
+        }
+      },
+      "residual_warped": {
+        "mae": 33.12768407263297,
+        "mean_origin_mae": 33.141148795510986,
+        "median_origin_mae": 28.71746443334181,
+        "selected_shift_steps": {
+          "-4": 8,
+          "-3": 1,
+          "-2": 4,
+          "-1": 8,
+          "0": 5,
+          "1": 2,
+          "4": 2
+        }
+      }
+    },
+    "4": {
+      "region_sizes": [
+        29,
+        53,
+        37,
+        65
+      ],
+      "mean_pca_explained_variance_ratio": 0.6697694510221481,
+      "absolute_unwarped": {
+        "mae": 26.86886528726939,
+        "mean_origin_mae": 26.327328225610927,
+        "median_origin_mae": 21.20620017743682
+      },
+      "residual_unwarped": {
+        "mae": 31.708914613656287,
+        "mean_origin_mae": 31.188938545855095,
+        "median_origin_mae": 24.441524923977607
+      },
+      "absolute_warped": {
+        "mae": 25.79871758989739,
+        "mean_origin_mae": 25.3177974580317,
+        "median_origin_mae": 20.51508620689655,
+        "selected_shift_steps": {
+          "-4": 27,
+          "-3": 8,
+          "-2": 9,
+          "-1": 14,
+          "0": 18,
+          "1": 10,
+          "2": 3,
+          "3": 8,
+          "4": 23
+        }
+      },
+      "residual_warped": {
+        "mae": 30.483339787097492,
+        "mean_origin_mae": 30.013945400172226,
+        "median_origin_mae": 23.429204470427877,
+        "selected_shift_steps": {
+          "-4": 29,
+          "-3": 16,
+          "-2": 22,
+          "-1": 16,
+          "0": 13,
+          "1": 9,
+          "2": 3,
+          "4": 12
+        }
+      }
+    }
+  },
+  "r16_gate": null,
+  "guardrails": [
+    "Candidates and continuations come from train only.",
+    "Validation PM is used only to select the diagnostic oracle donor and shift.",
+    "Absolute and residual atlases are reported separately; the historical 19.01 reference used TSR weather scenarios and is not a PM-patch baseline."
+  ]
+}
