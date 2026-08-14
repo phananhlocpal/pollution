@@ -36,7 +36,12 @@ def load_model(path: Path, panel, device: torch.device):
             stations=len(panel.stations), **checkpoint.get("config", {})
         ).to(device)
         model.load_state_dict(checkpoint["model_state"])
-    elif architecture == "transport_source_recurrent":
+    elif architecture in {
+        "transport_source_recurrent",
+        "latent_forcing_transport_source_recurrent_v2",
+        "factorized_exogenous_transport_source_v3",
+        "latent_impact_distillation_tsr",
+    }:
         model = TransportSourceRecurrentForecaster(
             stations=len(panel.stations), coordinates=panel.coordinates,
             **checkpoint.get("config", {}),

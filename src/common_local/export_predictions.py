@@ -17,6 +17,14 @@ from .dynamics import TransportSourceRecurrentForecaster
 from .model import CommonLocalForecaster
 
 
+RECURRENT_ARCHITECTURES = {
+    "transport_source_recurrent",
+    "latent_forcing_transport_source_recurrent_v2",
+    "factorized_exogenous_transport_source_v3",
+    "latent_impact_distillation_tsr",
+}
+
+
 def sha256(path):
     digest = hashlib.sha256()
     with Path(path).open("rb") as handle:
@@ -38,7 +46,7 @@ def export(args):
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     components = tuple(checkpoint.get("components", ()))
     architecture = checkpoint.get("architecture", "static_correction" if components else "common_local")
-    if architecture == "transport_source_recurrent":
+    if architecture in RECURRENT_ARCHITECTURES:
         model = TransportSourceRecurrentForecaster(
             root / "data/benchmarks/knowair/city.txt",
             stations=len(panel.stations), **checkpoint.get("config", {}),
@@ -56,9 +64,9 @@ def export(args):
             stations=len(panel.stations), **checkpoint.get("config", {})
         ).to(device)
     incompatible = model.load_state_dict(
-        checkpoint["model_state"], strict=architecture != "transport_source_recurrent"
+        checkpoint["model_state"], strict=architecture not in RECURRENT_ARCHITECTURES
     )
-    if architecture == "transport_source_recurrent":
+    if architecture in RECURRENT_ARCHITECTURES:
         unexpected = list(incompatible.unexpected_keys)
         missing = [key for key in incompatible.missing_keys if key != "station_threshold"]
         if missing or unexpected:
@@ -90,7 +98,7 @@ def export(args):
     prediction.flush(); truth.flush(); persistence.flush()
     np.save(output / "forecast_start.npy", starts)
     manifest = {
-        "model": architecture if architecture == "transport_source_recurrent" else
+        "model": architecture if architecture in RECURRENT_ARCHITECTURES else
                  "common_local+" + architecture if components else "common_local",
         "architecture": architecture,
         "components": list(components), "seed": args.seed, "split": args.split,

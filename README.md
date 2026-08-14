@@ -48,4 +48,14 @@ command mở corrected China-AQI test.
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
+Thử nghiệm latent-impact distillation (khí tượng tương lai chỉ là privileged
+input lúc train; validation chỉ dùng lịch sử) có entry point riêng:
+
+```powershell
+.\.venv\Scripts\python.exe -m common_local.train_distillation --seeds 43
+```
+
+`--latent-samples 9` lấy median của chín quỹ đạo prior tại validation; đặt bằng
+`1` để dùng trực tiếp prior mean và giảm chi phí tính toán.
+
 `data/` và `.venv/` là local resources, không thuộc paper package.

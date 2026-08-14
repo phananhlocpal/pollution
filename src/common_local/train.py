@@ -41,7 +41,8 @@ def _loader(dataset, batch_size, seed, shuffle):
 
 def _run_epoch(model, loader, panel, device, optimizer=None, loss_kind="l1"):
     training = optimizer is not None; model.train(training)
-    loss_sum = batches = 0; predictions, truths, validity = [], [], []
+    loss_sum = batches = latent_kl_sum = latent_kl_batches = 0
+    predictions, truths, validity = [], [], []
     started = time.perf_counter()
     context = torch.enable_grad if training else torch.no_grad
     with context():
@@ -51,6 +52,10 @@ def _run_epoch(model, loader, panel, device, optimizer=None, loss_kind="l1"):
                 output, batch["y"], float(panel.mean[0]), float(panel.std[0]), loss_kind,
                 batch.get("y_valid"),
             )
+            if "latent_kl" in output:
+                loss = loss + model.latent_kl_weight * output["latent_kl"]
+                latent_kl_sum += float(output["latent_kl"].detach())
+                latent_kl_batches += 1
             if "weather_prediction" in output and "future_weather_target" in batch:
                 weather_loss = torch.nn.functional.smooth_l1_loss(
                     output["weather_prediction"], batch["future_weather_target"], beta=.5
@@ -84,6 +89,8 @@ def _run_epoch(model, loader, panel, device, optimizer=None, loss_kind="l1"):
             loss_sum += float(loss.detach()); batches += 1
     result = {"loss": loss_sum / max(batches, 1),
               "seconds": time.perf_counter() - started}
+    if latent_kl_batches:
+        result["latent_kl"] = latent_kl_sum / latent_kl_batches
     if not training:
         prediction = np.concatenate(predictions) * panel.std[0] + panel.mean[0]
         truth = np.concatenate(truths) * panel.std[0] + panel.mean[0]

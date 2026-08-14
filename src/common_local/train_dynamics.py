@@ -23,6 +23,11 @@ def run_seed(args, seed):
     random.seed(seed); np.random.seed(seed); torch.manual_seed(seed)
     root = Path(args.root)
     if args.gagnn_dir:
+        if args.future_weather_mode == "distilled":
+            raise ValueError(
+                "Distillation requires realized future-weather targets; "
+                "the released GAGNN windows contain historical covariates only"
+            )
         if args.future_weather_mode == "observed":
             raise ValueError("GAGNN provides historical covariates only; choose persistence, learned, or latent")
         if args.gagnn_protocol == "96x24" and args.future_weather_mode not in {
@@ -66,8 +71,11 @@ def run_seed(args, seed):
         "event_expert": args.event_expert,
         "use_transport": not args.disable_transport,
         "use_source": not args.disable_source,
-        "use_auxiliary": not args.disable_auxiliary,
-        "use_month": not args.disable_month,
+        # Distilled forcing promises a strict history-only deployment path.
+        # Realized future auxiliary variables are therefore disabled; calendar
+        # month can be re-enabled in a later, explicitly broader protocol.
+        "use_auxiliary": not args.disable_auxiliary and args.future_weather_mode != "distilled",
+        "use_month": not args.disable_month and args.future_weather_mode != "distilled",
         "future_weather_mode": args.future_weather_mode,
         "weather_hidden_dim": args.weather_hidden_dim,
         "weather_loss_weight": args.weather_loss_weight,
@@ -75,6 +83,10 @@ def run_seed(args, seed):
         "transport_forcing_dim": args.transport_forcing_dim,
         "source_forcing_dim": args.source_forcing_dim,
         "horizon_embedding_dim": args.horizon_embedding_dim,
+        "distilled_latent_dim": args.distilled_latent_dim,
+        "distilled_hidden_dim": args.distilled_hidden_dim,
+        "latent_kl_weight": args.latent_kl_weight,
+        "latent_samples": args.latent_samples,
         "seasonal_period": args.seasonal_period,
         "horizon": horizon,
     }
@@ -118,6 +130,7 @@ def run_seed(args, seed):
     architecture = {
         "latent": "latent_forcing_transport_source_recurrent_v2",
         "factorized": "factorized_exogenous_transport_source_v3",
+        "distilled": "latent_impact_distillation_tsr",
     }.get(args.future_weather_mode, "transport_source_recurrent")
     for epoch in range(1, args.epochs + 1):
         train = _run_epoch(model, train_loader, panel, device, optimizer)
@@ -129,6 +142,8 @@ def run_seed(args, seed):
             "validation_loss": validation["loss"], "validation_mae": mae,
             "learning_rate": optimizer.param_groups[0]["lr"],
         }
+        if "latent_kl" in train:
+            row["train_latent_kl"] = train["latent_kl"]
         history.append(row)
         print(json.dumps(row), flush=True)
         if mae < best:
@@ -195,6 +210,7 @@ def main():
         choices=(
             "observed", "persistence", "learned", "latent", "seasonal",
             "seasonal_weighted", "factorized",
+            "distilled",
         ),
                         default="observed")
     parser.add_argument("--weather-hidden-dim", type=int, default=16)
@@ -203,6 +219,13 @@ def main():
     parser.add_argument("--transport-forcing-dim", type=int, default=16)
     parser.add_argument("--source-forcing-dim", type=int, default=32)
     parser.add_argument("--horizon-embedding-dim", type=int, default=8)
+    parser.add_argument("--distilled-latent-dim", type=int, default=16)
+    parser.add_argument("--distilled-hidden-dim", type=int, default=32)
+    parser.add_argument("--latent-kl-weight", type=float, default=.01)
+    parser.add_argument(
+        "--latent-samples", type=int, default=1,
+        help="Prior trajectories at evaluation; predictions use their median",
+    )
     parser.add_argument("--seasonal-period", type=int, default=8)
     parser.add_argument("--seasonal-cycles", type=int, default=3)
     parser.add_argument("--device", default="auto")

@@ -194,6 +194,59 @@ def test_history_only_recurrent_does_not_read_future_weather(tmp_path, mode):
         assert model.source_forcing_cell.hidden_size > model.transport_forcing_cell.hidden_size
 
 
+def test_distilled_latent_uses_privileged_weather_only_during_training(tmp_path):
+    city = tmp_path / "city.txt"
+    city.write_text("0 a 100 30\n1 b 101 31\n2 c 102 32\n")
+    model = TransportSourceRecurrentForecaster(
+        city, stations=3, horizon=4, hidden_dim=8, station_dim=3,
+        month_dim=2, operator_dim=4, future_weather_mode="distilled",
+        distilled_latent_dim=5, distilled_hidden_dim=7,
+        use_auxiliary=False, use_month=False,
+    )
+    history = torch.randn(2, 6, 3, 7)
+    privileged = torch.randn(2, 4, 3, 6)
+    training_batch = {
+        "x": history, "future_weather_target": privileged,
+    }
+    model.train()
+    output = model(training_batch)
+    assert output["prediction"].shape == (2, 4, 3)
+    assert output["latent_prior_mean"].shape == (2, 4, 3, 5)
+    assert output["latent_posterior_mean"].shape == (2, 4, 3, 5)
+    assert output["latent_kl"].ndim == 0
+    assert output["latent_kl"] >= 0
+
+    model.eval()
+    with torch.no_grad():
+        causal = model({"x": history})
+        changed = model({
+            "x": history,
+            "future_weather": privileged + 1000,
+            "future_weather_target": privileged - 1000,
+        })
+    assert torch.allclose(causal["prediction"], changed["prediction"])
+    assert "latent_posterior_mean" not in causal
+    assert "latent_kl" not in causal
+
+
+def test_distilled_latent_median_aggregates_prior_trajectories(tmp_path):
+    city = tmp_path / "city.txt"
+    city.write_text("0 a 100 30\n1 b 101 31\n2 c 102 32\n")
+    model = TransportSourceRecurrentForecaster(
+        city, stations=3, horizon=4, hidden_dim=8, station_dim=3,
+        month_dim=2, operator_dim=4, future_weather_mode="distilled",
+        distilled_latent_dim=5, distilled_hidden_dim=7, latent_samples=3,
+        use_auxiliary=False, use_month=False,
+    ).eval()
+    with torch.no_grad():
+        batch = {"x": torch.randn(2, 6, 3, 7)}
+        output = model(batch)
+        repeated = model(batch)
+    assert output["prediction"].shape == (2, 4, 3)
+    assert output["transport_operator"].shape == (2, 4, 3)
+    assert torch.equal(output["prediction"], repeated["prediction"])
+
+
 def test_gagnn_overlap_audit_and_split_local_96x24_reconstruction(tmp_path):
     samples, stations, features = 92, 209, 8
     timeline = np.arange(
