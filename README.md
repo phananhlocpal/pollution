@@ -55,6 +55,14 @@ input lúc train; validation chỉ dùng lịch sử) có entry point riêng:
 .\.venv\Scripts\python.exe -m common_local.train_distillation --seeds 43
 ```
 
+Bản distillation mặc định dùng hai nhánh latent vận chuyển/nguồn và tối ưu cả
+posterior lẫn prior triển khai (`--latent-prior-loss-weight 1`). Chẩn đoán ba
+đường dự báo của checkpoint cũ, chỉ trên validation:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\diagnose_distilled_latent.py --device cuda
+```
+
 `--latent-samples 9` lấy median của chín quỹ đạo prior tại validation; đặt bằng
 `1` để dùng trực tiếp prior mean và giảm chi phí tính toán.
 

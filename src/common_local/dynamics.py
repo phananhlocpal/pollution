@@ -52,7 +52,9 @@ class TransportSourceRecurrentForecaster(nn.Module):
         distilled_latent_dim: int = 16,
         distilled_hidden_dim: int = 32,
         latent_kl_weight: float = 0.01,
+        latent_prior_loss_weight: float = 0.0,
         latent_samples: int = 1,
+        distilled_factorized: bool = False,
         coordinates=None,
     ):
         super().__init__()
@@ -75,6 +77,8 @@ class TransportSourceRecurrentForecaster(nn.Module):
         self.weather_loss_weight = weather_loss_weight
         self.weather_increment_loss_weight = weather_increment_loss_weight
         self.latent_kl_weight = latent_kl_weight
+        self.latent_prior_loss_weight = latent_prior_loss_weight
+        self.distilled_factorized = distilled_factorized
         if latent_samples < 1:
             raise ValueError("latent_samples must be at least one")
         self.latent_samples = latent_samples
@@ -139,6 +143,15 @@ class TransportSourceRecurrentForecaster(nn.Module):
                 nn.init.zeros_(self.transport_weather_head.weight)
                 nn.init.zeros_(self.transport_weather_head.bias)
         if self.distilled_forcing:
+            if distilled_factorized and distilled_latent_dim < 2:
+                raise ValueError("factorized distillation requires latent dimension >= 2")
+            self.distilled_transport_dim = (
+                distilled_latent_dim // 2 if distilled_factorized else distilled_latent_dim
+            )
+            self.distilled_source_dim = (
+                distilled_latent_dim - self.distilled_transport_dim
+                if distilled_factorized else distilled_latent_dim
+            )
             # p(z | history): a node-wise history encoder followed by a
             # horizon-conditioned recurrent diagonal-Gaussian prior.
             self.distill_history_encoder = nn.GRU(
@@ -157,17 +170,23 @@ class TransportSourceRecurrentForecaster(nn.Module):
             # training information and is never evaluated at inference.
             self.distill_future_encoder = nn.GRU(
                 weather_dim, distilled_hidden_dim, batch_first=True,
-                bidirectional=True,
+                bidirectional=not distilled_factorized,
+            )
+            future_context_dim = distilled_hidden_dim * (
+                1 if distilled_factorized else 2
             )
             self.distill_posterior_head = nn.Sequential(
-                nn.Linear(3 * distilled_hidden_dim, 2 * distilled_latent_dim),
+                nn.Linear(
+                    distilled_hidden_dim + future_context_dim,
+                    2 * distilled_latent_dim,
+                ),
             )
         self.station_embedding = nn.Embedding(stations, station_dim)
         self.month_embedding = nn.Embedding(12, month_dim)
 
         forcing_dim = (
             source_forcing_dim if self.factorized_forcing else
-            distilled_latent_dim if self.distilled_forcing else
+            self.distilled_source_dim if self.distilled_forcing else
             weather_hidden_dim if self.latent_forcing else weather_dim
         )
         common_future_dim = 1 + forcing_dim + auxiliary_dim + month_dim
@@ -189,7 +208,14 @@ class TransportSourceRecurrentForecaster(nn.Module):
             nn.Linear(operator_dim, 1),
         ))
         if self.distilled_forcing:
-            self.latent_transport_signal = nn.Linear(distilled_latent_dim, 1)
+            if distilled_factorized:
+                edge_input_dim = 2 * self.distilled_transport_dim + 3
+                self.distilled_edge_head = nn.Sequential(
+                    nn.Linear(edge_input_dim, operator_dim), nn.GELU(),
+                    nn.Linear(operator_dim, 1),
+                )
+            else:
+                self.latent_transport_signal = nn.Linear(distilled_latent_dim, 1)
         if event_expert:
             self.event_source_head = _zero_last(nn.Sequential(
                 nn.Linear(hidden_dim + local_feature_dim, operator_dim), nn.GELU(),
@@ -244,6 +270,23 @@ class TransportSourceRecurrentForecaster(nn.Module):
         neighbor_state = state[:, self.neighbor_index]
         weights = self.edge_weight[None]
         weights = weights / weights.sum(-1, keepdim=True).clamp_min(1e-8)
+        return (weights * neighbor_state).sum(-1) - state
+
+    def _distilled_transport_innovation(
+        self, state: torch.Tensor, transport_latent: torch.Tensor
+    ) -> torch.Tensor:
+        """Build a directed, horizon-specific transport graph from z^T."""
+        neighbor_state = state[:, self.neighbor_index]
+        neighbor_latent = transport_latent[:, self.neighbor_index]
+        target_latent = transport_latent[:, :, None].expand_as(neighbor_latent)
+        geometry = torch.stack((
+            self.edge_east, self.edge_north,
+            self.edge_weight.clamp_min(1e-8).log(),
+        ), -1)[None].expand(state.shape[0], -1, -1, -1)
+        logits = self.distilled_edge_head(torch.cat((
+            target_latent, neighbor_latent, geometry,
+        ), -1)).squeeze(-1)
+        weights = torch.softmax(logits, -1)
         return (weights * neighbor_state).sum(-1) - state
 
     def _initial_latent_forcing(self, weather: torch.Tensor):
@@ -386,8 +429,17 @@ class TransportSourceRecurrentForecaster(nn.Module):
         latent_sequence = None
         sample_count = 1
         if self.distilled_forcing:
+            latent_mode = batch.get("distilled_latent_mode")
+            valid_modes = {
+                None, "posterior_mean", "prior_mean", "prior_sample", "prior_median"
+            }
+            if latent_mode not in valid_modes:
+                raise ValueError(f"Unknown distilled_latent_mode: {latent_mode}")
             privileged_weather = None
-            if self.training:
+            needs_posterior = (
+                self.training and latent_mode is None
+            ) or latent_mode == "posterior_mean"
+            if needs_posterior:
                 if "future_weather_target" not in batch:
                     raise ValueError(
                         "distilled training requires future_weather_target as privileged input"
@@ -395,11 +447,12 @@ class TransportSourceRecurrentForecaster(nn.Module):
                 privileged_weather = batch["future_weather_target"]
             prior, posterior = self._distilled_distributions(x, privileged_weather)
             prior_mean, prior_log_variance = prior
-            if self.training:
+            if needs_posterior:
                 posterior_mean, posterior_log_variance = posterior
-                latent_sequence = posterior_mean + torch.randn_like(
-                    posterior_mean
-                ) * (0.5 * posterior_log_variance).exp()
+                latent_sequence = posterior_mean if latent_mode == "posterior_mean" else (
+                    posterior_mean + torch.randn_like(posterior_mean)
+                    * (0.5 * posterior_log_variance).exp()
+                )
                 latent_kl = self._diagonal_gaussian_kl(
                     posterior_mean, posterior_log_variance,
                     prior_mean, prior_log_variance,
@@ -409,7 +462,13 @@ class TransportSourceRecurrentForecaster(nn.Module):
                     "latent_posterior_log_variance": posterior_log_variance,
                     "latent_kl": latent_kl,
                 }
-            elif self.latent_samples == 1:
+            elif latent_mode == "prior_sample":
+                latent_sequence = prior_mean + torch.randn_like(prior_mean) * (
+                    0.5 * prior_log_variance
+                ).exp()
+            elif latent_mode == "prior_mean" or (
+                latent_mode is None and self.latent_samples == 1
+            ):
                 latent_sequence = prior_mean
             else:
                 sample_count = self.latent_samples
@@ -505,7 +564,16 @@ class TransportSourceRecurrentForecaster(nn.Module):
         factorized_weather_predictions = []
         for step in range(self.horizon):
             if self.distilled_forcing:
-                local_forcing_step = latent_sequence[:, step]
+                distilled_step = latent_sequence[:, step]
+                if self.distilled_factorized:
+                    transport_latent_step = distilled_step[
+                        ..., :self.distilled_transport_dim
+                    ]
+                    local_forcing_step = distilled_step[
+                        ..., self.distilled_transport_dim:
+                    ]
+                else:
+                    local_forcing_step = distilled_step
                 common_forcing_step = local_forcing_step.mean(1)
             elif self.latent_forcing:
                 state_mean = state.mean(-1, keepdim=True)
@@ -557,7 +625,12 @@ class TransportSourceRecurrentForecaster(nn.Module):
                 auxiliary_step.mean(1), month,
             ), -1)
             common_hidden = self.common_cell(common_features, common_hidden)
-            if self.latent_forcing or self.distilled_forcing:
+            if self.distilled_forcing and self.distilled_factorized:
+                innovation_now = self._distilled_transport_innovation(
+                    state, transport_latent_step
+                )
+                transport_context = innovation_now[..., None]
+            elif self.latent_forcing or self.distilled_forcing:
                 innovation_now = self._spatial_innovation(state)
                 transport_context = self.latent_transport_signal(local_forcing_step)
             elif self.factorized_forcing:

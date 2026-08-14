@@ -42,6 +42,7 @@ def _loader(dataset, batch_size, seed, shuffle):
 def _run_epoch(model, loader, panel, device, optimizer=None, loss_kind="l1"):
     training = optimizer is not None; model.train(training)
     loss_sum = batches = latent_kl_sum = latent_kl_batches = 0
+    latent_prior_loss_sum = latent_prior_loss_batches = 0
     predictions, truths, validity = [], [], []
     started = time.perf_counter()
     context = torch.enable_grad if training else torch.no_grad
@@ -52,6 +53,17 @@ def _run_epoch(model, loader, panel, device, optimizer=None, loss_kind="l1"):
                 output, batch["y"], float(panel.mean[0]), float(panel.std[0]), loss_kind,
                 batch.get("y_valid"),
             )
+            if training and getattr(model, "latent_prior_loss_weight", 0.0) > 0:
+                prior_output = model({
+                    **batch, "distilled_latent_mode": "prior_sample"
+                })
+                prior_loss, _ = common_local_loss(
+                    prior_output, batch["y"], float(panel.mean[0]),
+                    float(panel.std[0]), loss_kind, batch.get("y_valid"),
+                )
+                loss = loss + model.latent_prior_loss_weight * prior_loss
+                latent_prior_loss_sum += float(prior_loss.detach())
+                latent_prior_loss_batches += 1
             if "latent_kl" in output:
                 loss = loss + model.latent_kl_weight * output["latent_kl"]
                 latent_kl_sum += float(output["latent_kl"].detach())
@@ -91,6 +103,10 @@ def _run_epoch(model, loader, panel, device, optimizer=None, loss_kind="l1"):
               "seconds": time.perf_counter() - started}
     if latent_kl_batches:
         result["latent_kl"] = latent_kl_sum / latent_kl_batches
+    if latent_prior_loss_batches:
+        result["latent_prior_loss"] = (
+            latent_prior_loss_sum / latent_prior_loss_batches
+        )
     if not training:
         prediction = np.concatenate(predictions) * panel.std[0] + panel.mean[0]
         truth = np.concatenate(truths) * panel.std[0] + panel.mean[0]

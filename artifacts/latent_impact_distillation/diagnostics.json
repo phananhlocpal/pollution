@@ -1,0 +1,27 @@
+{
+  "split": "validation",
+  "test_accessed": false,
+  "samples": 9,
+  "seeds": {
+    "42": {
+      "posterior_oracle_mean_mae": 17.202873709902494,
+      "prior_mean_mae": 21.45720030027853,
+      "prior_median_9_mae": 21.286343324243063
+    },
+    "43": {
+      "posterior_oracle_mean_mae": 17.708696964192775,
+      "prior_mean_mae": 21.509513609744985,
+      "prior_median_9_mae": 21.479407828465227
+    },
+    "44": {
+      "posterior_oracle_mean_mae": 17.24259431587101,
+      "prior_mean_mae": 21.46649567945649,
+      "prior_median_9_mae": 21.277044378447346
+    }
+  },
+  "mean": {
+    "posterior_oracle_mean_mae": 17.384721663322093,
+    "prior_mean_mae": 21.477736529826668,
+    "prior_median_9_mae": 21.34759851038521
+  }
+}

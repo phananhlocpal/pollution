@@ -6,12 +6,14 @@
     44
   ],
   "validation_mae": [
-    21.286343321638498,
-    21.47940782623104,
-    21.277044376551416
+    20.529635012132267,
+    20.7453068039167,
+    20.66140638739905
   ],
-  "validation_mean_mae": 21.34759850814032,
+  "validation_mean_mae": 20.64544940114934,
   "information_set_at_evaluation": "historical PM2.5 and meteorology only",
   "privileged_training_input": "realized future meteorology",
+  "direct_prior_pm_loss_weight": 1.0,
+  "factorized_transport_source_latent": true,
   "test_accessed": false
 }

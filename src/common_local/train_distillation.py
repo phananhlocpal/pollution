@@ -37,6 +37,14 @@ def build_parser():
     parser.add_argument("--distilled-hidden-dim", type=int, default=32)
     parser.add_argument("--latent-kl-weight", type=float, default=.01)
     parser.add_argument(
+        "--latent-prior-loss-weight", type=float, default=1.0,
+        help="Direct PM loss on a prior rollout used at deployment",
+    )
+    parser.add_argument(
+        "--legacy-shared-latent", action="store_true",
+        help="Retain the original shared latent and fixed-distance transport",
+    )
+    parser.add_argument(
         "--latent-samples", type=int, default=9,
         help="Deterministic prior scenarios aggregated by trajectory median",
     )
@@ -53,6 +61,7 @@ def build_parser():
 def _complete_arguments(args):
     """Supply shared trainer options that are fixed by this protocol."""
     args.future_weather_mode = "distilled"
+    args.distilled_factorized = not args.legacy_shared_latent
     args.gagnn_dir = None
     args.gagnn_protocol = "24x6"
     args.disable_auxiliary = True
@@ -79,6 +88,8 @@ def main():
         "validation_mean_mae": float(np.mean(validation_mae)),
         "information_set_at_evaluation": "historical PM2.5 and meteorology only",
         "privileged_training_input": "realized future meteorology",
+        "direct_prior_pm_loss_weight": args.latent_prior_loss_weight,
+        "factorized_transport_source_latent": args.distilled_factorized,
         "test_accessed": False,
     }
     output = Path(args.root) / args.output_dir

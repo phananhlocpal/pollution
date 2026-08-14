@@ -247,6 +247,47 @@ def test_distilled_latent_median_aggregates_prior_trajectories(tmp_path):
     assert torch.equal(output["prediction"], repeated["prediction"])
 
 
+def test_distilled_diagnostic_paths_and_factorized_transport(tmp_path):
+    city = tmp_path / "city.txt"
+    city.write_text("0 a 100 30\n1 b 101 31\n2 c 102 32\n")
+    model = TransportSourceRecurrentForecaster(
+        city, stations=3, horizon=4, hidden_dim=8, station_dim=3,
+        month_dim=2, operator_dim=4, future_weather_mode="distilled",
+        distilled_latent_dim=6, distilled_hidden_dim=7,
+        distilled_factorized=True, latent_prior_loss_weight=1.0,
+        use_auxiliary=False, use_month=False,
+    ).eval()
+    batch = {
+        "x": torch.randn(2, 6, 3, 7),
+        "future_weather_target": torch.randn(2, 4, 3, 6),
+    }
+    with torch.no_grad():
+        posterior = model({**batch, "distilled_latent_mode": "posterior_mean"})
+        prior = model({**batch, "distilled_latent_mode": "prior_mean"})
+    assert posterior["prediction"].shape == prior["prediction"].shape == (2, 4, 3)
+    assert model.distilled_edge_head[0].in_features == 9
+    assert model.distill_future_encoder.bidirectional is False
+
+
+def test_distilled_prior_rollout_backpropagates_to_prior(tmp_path):
+    city = tmp_path / "city.txt"
+    city.write_text("0 a 100 30\n1 b 101 31\n2 c 102 32\n")
+    model = TransportSourceRecurrentForecaster(
+        city, stations=3, horizon=4, hidden_dim=8, station_dim=3,
+        month_dim=2, operator_dim=4, future_weather_mode="distilled",
+        distilled_latent_dim=6, distilled_hidden_dim=7,
+        distilled_factorized=True, use_auxiliary=False, use_month=False,
+    ).train()
+    output = model({
+        "x": torch.randn(2, 6, 3, 7),
+        "future_weather_target": torch.randn(2, 4, 3, 6),
+        "distilled_latent_mode": "prior_sample",
+    })
+    output["prediction"].square().mean().backward()
+    assert model.distill_prior_head.weight.grad is not None
+    assert torch.isfinite(model.distill_prior_head.weight.grad).all()
+
+
 def test_gagnn_overlap_audit_and_split_local_96x24_reconstruction(tmp_path):
     samples, stations, features = 92, 209, 8
     timeline = np.arange(

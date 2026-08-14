@@ -86,7 +86,9 @@ def run_seed(args, seed):
         "distilled_latent_dim": args.distilled_latent_dim,
         "distilled_hidden_dim": args.distilled_hidden_dim,
         "latent_kl_weight": args.latent_kl_weight,
+        "latent_prior_loss_weight": args.latent_prior_loss_weight,
         "latent_samples": args.latent_samples,
+        "distilled_factorized": args.distilled_factorized,
         "seasonal_period": args.seasonal_period,
         "horizon": horizon,
     }
@@ -144,6 +146,8 @@ def run_seed(args, seed):
         }
         if "latent_kl" in train:
             row["train_latent_kl"] = train["latent_kl"]
+        if "latent_prior_loss" in train:
+            row["train_latent_prior_loss"] = train["latent_prior_loss"]
         history.append(row)
         print(json.dumps(row), flush=True)
         if mae < best:
@@ -222,6 +226,8 @@ def main():
     parser.add_argument("--distilled-latent-dim", type=int, default=16)
     parser.add_argument("--distilled-hidden-dim", type=int, default=32)
     parser.add_argument("--latent-kl-weight", type=float, default=.01)
+    parser.add_argument("--latent-prior-loss-weight", type=float, default=0.0)
+    parser.add_argument("--distilled-factorized", action="store_true")
     parser.add_argument(
         "--latent-samples", type=int, default=1,
         help="Prior trajectories at evaluation; predictions use their median",
