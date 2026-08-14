@@ -234,6 +234,34 @@
     "pm_divergence_mean_ratio": 1.2225377150340804,
     "partial_spearman_controlling_history_distance": 0.32866751016199824
   },
+  "moving_block_bootstrap": {
+    "seven_day_blocks": {
+      "block_origins": 56,
+      "block_days": 7.0,
+      "draws": 1000,
+      "pm_divergence_delta_95ci": [
+        0.7510999583371898,
+        8.783808992347932
+      ],
+      "partial_spearman_95ci": [
+        0.08555863257675388,
+        0.5546413593265174
+      ]
+    },
+    "fourteen_day_blocks": {
+      "block_origins": 112,
+      "block_days": 14.0,
+      "draws": 1000,
+      "pm_divergence_delta_95ci": [
+        0.18391420250391283,
+        9.06690714351099
+      ],
+      "partial_spearman_95ci": [
+        0.02707378018866885,
+        0.6058424441617879
+      ]
+    }
+  },
   "closest_10pct_future_weather_rmse_by_variable": {
     "2m_temperature": {
       "mean": 0.38090106592603346,

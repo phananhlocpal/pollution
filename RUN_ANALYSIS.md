@@ -36,6 +36,16 @@ The primary result is written to
 `artifacts/history_future_divergence/analysis.json`. Sensitivity runs can change
 `--pca-components`; the checked analysis uses 64 components.
 
+Evaluate K-nearest-history conditional medians, retrieved future-weather TSR
+scenarios, best-of-K oracle bounds, and history-conditioned forecastability:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\evaluate_analogue_scenarios.py --device cuda
+```
+
+This uses train futures as retrieval candidates, evaluates validation only, and
+writes `artifacts/analogue_scenarios/validation.json`.
+
 Evaluate the retained primary checkpoints on KnowAir with:
 
 ```powershell

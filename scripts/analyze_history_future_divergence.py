@@ -135,6 +135,38 @@ def history_matched_weather_contrast(metrics, pool_indices, bins=10):
     }
 
 
+def moving_block_bootstrap(metrics, seed, block_size, draws=1000):
+    """Bootstrap chronological origins in contiguous, circular time blocks."""
+    rng = np.random.default_rng(seed)
+    count = len(metrics["history_rmse_standardized"])
+    blocks = int(np.ceil(count / block_size))
+    deltas, partial_correlations = np.empty(draws), np.empty(draws)
+    offsets = np.arange(block_size)
+    for draw in range(draws):
+        starts = rng.integers(0, count, size=blocks)
+        sampled = ((starts[:, None] + offsets[None]) % count).ravel()[:count]
+        ordered = sampled[np.argsort(metrics["history_rmse_standardized"][sampled])]
+        pool = ordered[:max(40, int(round(count * 0.25)))]
+        contrast = history_matched_weather_contrast(metrics, pool)
+        deltas[draw] = contrast["pm_divergence_mean_delta"]
+        partial_correlations[draw] = contrast[
+            "partial_spearman_controlling_history_distance"
+        ]
+    return {
+        "block_origins": block_size,
+        "block_days": block_size * 3 / 24,
+        "draws": draws,
+        "pm_divergence_delta_95ci": [
+            float(value) for value in np.quantile(deltas, (0.025, 0.975))
+        ],
+        "partial_spearman_95ci": [
+            float(value) for value in np.quantile(
+                partial_correlations, (0.025, 0.975)
+            )
+        ],
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", default=".")
@@ -250,6 +282,14 @@ def main():
         "history_distance_matched_weather_contrast": history_matched_weather_contrast(
             matched, order[:max(40, int(round(len(order) * 0.25)))]
         ),
+        "moving_block_bootstrap": {
+            "seven_day_blocks": moving_block_bootstrap(
+                matched, args.seed, block_size=56
+            ),
+            "fourteen_day_blocks": moving_block_bootstrap(
+                matched, args.seed + 1, block_size=112
+            ),
+        },
         "closest_10pct_future_weather_rmse_by_variable": {
             name: describe(closest_ten_variable[:, index])
             for index, name in enumerate(variable_names)
