@@ -13,6 +13,18 @@ the China-AQI corrected test remains unopened.
 
 ## KnowAir validation ablations
 
+### Full-history precursor diagnostic (H1--H4)
+
+Repeat analogue matching while expanding history from PM + core meteorology to
+all raw KnowAir meteorology and derived dynamical diagnostics. Future outcomes
+are held fixed across levels and the test split is not accessed:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\analyze_full_history_precursors.py
+```
+
+This writes `artifacts/full_history_precursors/validation.json`.
+
 The publication workflow retrains primary TSR, transport and source/sink
 knockouts, and a parameter-matched direct baseline with seeds 42, 43 and 44.
 

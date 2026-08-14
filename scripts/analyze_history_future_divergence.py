@@ -36,16 +36,19 @@ def history_features(values: np.ndarray, starts: np.ndarray, history: int) -> np
     return np.asarray(rows, dtype=np.float32)
 
 
-def pair_divergence(panel, query_starts, reference_starts, history, horizon):
+def pair_divergence(
+    panel, query_starts, reference_starts, history, horizon, history_values=None
+):
     values = panel.values
+    history_values = values if history_values is None else history_values
     count = len(query_starts)
     history_rmse = np.empty(count, dtype=np.float64)
     future_weather_rmse = np.empty(count, dtype=np.float64)
     future_pm_mae = np.empty(count, dtype=np.float64)
     weather_by_variable = np.empty((count, values.shape[-1] - 1), dtype=np.float64)
     for index, (query, reference) in enumerate(zip(query_starts, reference_starts)):
-        query_history = values[query:query + history]
-        reference_history = values[reference:reference + history]
+        query_history = history_values[query:query + history]
+        reference_history = history_values[reference:reference + history]
         history_rmse[index] = np.sqrt(np.mean(
             np.square(query_history - reference_history), dtype=np.float64
         ))
