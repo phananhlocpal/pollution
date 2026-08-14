@@ -23,6 +23,19 @@ knockouts, and a parameter-matched direct baseline with seeds 42, 43 and 44.
 Outputs are written under `artifacts/`; the canonical frozen numbers already used
 by the manuscript are in `paper/RESULTS.json`.
 
+## History-equivalent future-divergence diagnostic
+
+Test whether validation origins with close train-history analogues still develop
+different future meteorology and PM2.5 trajectories, without reading test:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\analyze_history_future_divergence.py
+```
+
+The primary result is written to
+`artifacts/history_future_divergence/analysis.json`. Sensitivity runs can change
+`--pca-components`; the checked analysis uses 64 components.
+
 Evaluate the retained primary checkpoints on KnowAir with:
 
 ```powershell
