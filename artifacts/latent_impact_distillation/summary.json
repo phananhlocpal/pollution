@@ -1,0 +1,17 @@
+{
+  "model": "latent_impact_distillation_tsr",
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "validation_mae": [
+    21.286343321638498,
+    21.47940782623104,
+    21.277044376551416
+  ],
+  "validation_mean_mae": 21.34759850814032,
+  "information_set_at_evaluation": "historical PM2.5 and meteorology only",
+  "privileged_training_input": "realized future meteorology",
+  "test_accessed": false
+}
