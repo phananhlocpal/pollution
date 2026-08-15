@@ -1,0 +1,685 @@
+{
+  "dataset": {
+    "time_steps": 11688,
+    "stations": 184,
+    "overlapping_windows": 11641,
+    "pm_nonpositive_treated_missing_fraction": 0.003752455137934113,
+    "split_boundaries_used": false
+  },
+  "pm_information": [
+    {
+      "lead_hour": 3,
+      "pm_history_median": 0.7604806647813063,
+      "pm_history_q25": 0.7213205015751616,
+      "pm_history_q75": 0.7974976113786083,
+      "pm_history_n": 184,
+      "past_weather_gain_median": 0.019956465706989945,
+      "past_weather_gain_q25": 0.014836993652789926,
+      "past_weather_gain_q75": 0.029796597996888385,
+      "past_weather_gain_n": 184,
+      "future_weather_gain_median": 0.01955296076434715,
+      "future_weather_gain_q25": 0.013576645973324503,
+      "future_weather_gain_q75": 0.02569891274952013,
+      "future_weather_gain_n": 184
+    },
+    {
+      "lead_hour": 24,
+      "pm_history_median": 0.16713720841116275,
+      "pm_history_q25": 0.1198352957367215,
+      "pm_history_q75": 0.21884441705434463,
+      "pm_history_n": 184,
+      "past_weather_gain_median": 0.09064030998788852,
+      "past_weather_gain_q25": 0.07430024101116112,
+      "past_weather_gain_q75": 0.10713053709701326,
+      "past_weather_gain_n": 184,
+      "future_weather_gain_median": 0.14764527284225953,
+      "future_weather_gain_q25": 0.11452496546998522,
+      "future_weather_gain_q75": 0.2029121079631519,
+      "future_weather_gain_n": 184
+    },
+    {
+      "lead_hour": 48,
+      "pm_history_median": 0.035294446447177164,
+      "pm_history_q25": 0.019723486887000763,
+      "pm_history_q75": 0.06527736295746589,
+      "pm_history_n": 184,
+      "past_weather_gain_median": 0.05622205849324885,
+      "past_weather_gain_q25": 0.044657407353975165,
+      "past_weather_gain_q75": 0.07108431542551069,
+      "past_weather_gain_n": 184,
+      "future_weather_gain_median": 0.19453936570177494,
+      "future_weather_gain_q25": 0.14711486928619666,
+      "future_weather_gain_q75": 0.2481690942017689,
+      "future_weather_gain_n": 184
+    },
+    {
+      "lead_hour": 72,
+      "pm_history_median": 0.010006367564202479,
+      "pm_history_q25": 0.004274514039462413,
+      "pm_history_q75": 0.028895557802682215,
+      "pm_history_n": 184,
+      "past_weather_gain_median": 0.04547477686545459,
+      "past_weather_gain_q25": 0.034918264451160114,
+      "past_weather_gain_q75": 0.061852473367094596,
+      "past_weather_gain_n": 184,
+      "future_weather_gain_median": 0.2064961112392552,
+      "future_weather_gain_q25": 0.1603813466715001,
+      "future_weather_gain_q75": 0.2604296813361073,
+      "future_weather_gain_n": 184
+    }
+  ],
+  "pm_weather_mediation": [
+    {
+      "lead_hour": 3,
+      "raw_pm_persistence_median": 0.8718468080757018,
+      "raw_pm_persistence_q25": 0.8479182057508019,
+      "raw_pm_persistence_q75": 0.8925254335217763,
+      "raw_pm_persistence_n": 184,
+      "after_future_weather_median": 0.8535919382080275,
+      "after_future_weather_q25": 0.8258696035714741,
+      "after_future_weather_q75": 0.8786327013184816,
+      "after_future_weather_n": 184,
+      "median_reduction": 0.017606114886671853
+    },
+    {
+      "lead_hour": 24,
+      "raw_pm_persistence_median": 0.4071920742432751,
+      "raw_pm_persistence_q25": 0.345106370608112,
+      "raw_pm_persistence_q75": 0.4631909812209611,
+      "raw_pm_persistence_n": 184,
+      "after_future_weather_median": 0.3796718371351747,
+      "after_future_weather_q25": 0.29948756191251824,
+      "after_future_weather_q75": 0.43567999845961436,
+      "after_future_weather_n": 184,
+      "median_reduction": 0.027123763808853063
+    },
+    {
+      "lead_hour": 48,
+      "raw_pm_persistence_median": 0.18686280280744835,
+      "raw_pm_persistence_q25": 0.13618990129753297,
+      "raw_pm_persistence_q75": 0.2462696654186542,
+      "raw_pm_persistence_n": 184,
+      "after_future_weather_median": 0.17240140328360296,
+      "after_future_weather_q25": 0.11087545775404989,
+      "after_future_weather_q75": 0.23993273579096244,
+      "after_future_weather_n": 184,
+      "median_reduction": 0.013055918540739793
+    },
+    {
+      "lead_hour": 72,
+      "raw_pm_persistence_median": 0.09632578996447888,
+      "raw_pm_persistence_q25": 0.056309636637426795,
+      "raw_pm_persistence_q75": 0.16020271325381175,
+      "raw_pm_persistence_n": 184,
+      "after_future_weather_median": 0.09314768475172631,
+      "after_future_weather_q25": 0.044143972029401145,
+      "after_future_weather_q75": 0.1602655453206223,
+      "after_future_weather_n": 184,
+      "median_reduction": 0.005851622040410641
+    }
+  ],
+  "event_counts": [
+    {
+      "event": "clean_persistence",
+      "total_station_origins": 606851,
+      "median_per_station": 3116.0,
+      "q25_per_station": 2066.5,
+      "q75_per_station": 4355.0
+    },
+    {
+      "event": "onset",
+      "total_station_origins": 12332,
+      "median_per_station": 52.0,
+      "q25_per_station": 26.0,
+      "q75_per_station": 96.0
+    },
+    {
+      "event": "polluted_persistence",
+      "total_station_origins": 256353,
+      "median_per_station": 1220.0,
+      "q25_per_station": 733.5,
+      "q75_per_station": 1967.25
+    },
+    {
+      "event": "clearance",
+      "total_station_origins": 28853,
+      "median_per_station": 138.5,
+      "q25_per_station": 81.0,
+      "q75_per_station": 208.5
+    }
+  ],
+  "transport_summary": [
+    {
+      "lead_hour": 3,
+      "wind_regime": "crosswind",
+      "edges": 920,
+      "median_target_control": 0.14878976094832846,
+      "median_regional_control": 0.12233697005557001,
+      "median_weather_control": 0.11442805045560238,
+      "median_distance_km": 102.78077816932856
+    },
+    {
+      "lead_hour": 3,
+      "wind_regime": "downwind",
+      "edges": 920,
+      "median_target_control": 0.23085427594951957,
+      "median_regional_control": 0.20682937706294152,
+      "median_weather_control": 0.19854337807595274,
+      "median_distance_km": 102.78077816932856
+    },
+    {
+      "lead_hour": 3,
+      "wind_regime": "upwind",
+      "edges": 920,
+      "median_target_control": 0.08112650432869171,
+      "median_regional_control": 0.05595999027307232,
+      "median_weather_control": 0.05063069606334594,
+      "median_distance_km": 102.78077816932856
+    },
+    {
+      "lead_hour": 6,
+      "wind_regime": "crosswind",
+      "edges": 920,
+      "median_target_control": 0.16532185626972612,
+      "median_regional_control": 0.1238005507993479,
+      "median_weather_control": 0.1200652445650984,
+      "median_distance_km": 102.78077816932856
+    },
+    {
+      "lead_hour": 6,
+      "wind_regime": "downwind",
+      "edges": 920,
+      "median_target_control": 0.24063951345826604,
+      "median_regional_control": 0.2058453701678244,
+      "median_weather_control": 0.20294836385022247,
+      "median_distance_km": 102.78077816932856
+    },
+    {
+      "lead_hour": 6,
+      "wind_regime": "upwind",
+      "edges": 920,
+      "median_target_control": 0.09114885320668628,
+      "median_regional_control": 0.05555968211175101,
+      "median_weather_control": 0.0517243487495018,
+      "median_distance_km": 102.78077816932856
+    },
+    {
+      "lead_hour": 12,
+      "wind_regime": "crosswind",
+      "edges": 920,
+      "median_target_control": 0.1443727080342585,
+      "median_regional_control": 0.09108135967059533,
+      "median_weather_control": 0.0875955637779318,
+      "median_distance_km": 102.78077816932856
+    },
+    {
+      "lead_hour": 12,
+      "wind_regime": "downwind",
+      "edges": 920,
+      "median_target_control": 0.18891925327786038,
+      "median_regional_control": 0.14216036110239488,
+      "median_weather_control": 0.14172282152517504,
+      "median_distance_km": 102.78077816932856
+    },
+    {
+      "lead_hour": 12,
+      "wind_regime": "upwind",
+      "edges": 920,
+      "median_target_control": 0.0851846425596973,
+      "median_regional_control": 0.04152232984857075,
+      "median_weather_control": 0.039626665542189785,
+      "median_distance_km": 102.78077816932856
+    },
+    {
+      "lead_hour": 24,
+      "wind_regime": "crosswind",
+      "edges": 920,
+      "median_target_control": 0.08636870810877043,
+      "median_regional_control": 0.039334374484733474,
+      "median_weather_control": 0.03243458515886022,
+      "median_distance_km": 102.78077816932856
+    },
+    {
+      "lead_hour": 24,
+      "wind_regime": "downwind",
+      "edges": 920,
+      "median_target_control": 0.10359954292626139,
+      "median_regional_control": 0.056423101853318045,
+      "median_weather_control": 0.05104336223441011,
+      "median_distance_km": 102.78077816932856
+    },
+    {
+      "lead_hour": 24,
+      "wind_regime": "upwind",
+      "edges": 920,
+      "median_target_control": 0.056955855727010805,
+      "median_regional_control": 0.009990353300850213,
+      "median_weather_control": 0.007100440105878986,
+      "median_distance_km": 102.78077816932856
+    }
+  ],
+  "analog_summary": [
+    {
+      "history_type": "joint",
+      "history_span": "full72",
+      "future_type": "joint",
+      "future_horizon": "day1",
+      "median_rho": 0.28909897152474284
+    },
+    {
+      "history_type": "joint",
+      "history_span": "full72",
+      "future_type": "joint",
+      "future_horizon": "day3",
+      "median_rho": 0.051294202573550635
+    },
+    {
+      "history_type": "joint",
+      "history_span": "full72",
+      "future_type": "joint",
+      "future_horizon": "full72",
+      "median_rho": 0.18221585455396364
+    },
+    {
+      "history_type": "joint",
+      "history_span": "full72",
+      "future_type": "pm",
+      "future_horizon": "day1",
+      "median_rho": 0.1085453011363253
+    },
+    {
+      "history_type": "joint",
+      "history_span": "full72",
+      "future_type": "pm",
+      "future_horizon": "day3",
+      "median_rho": -0.0029972369993092494
+    },
+    {
+      "history_type": "joint",
+      "history_span": "full72",
+      "future_type": "pm",
+      "future_horizon": "full72",
+      "median_rho": 0.0539167612291903
+    },
+    {
+      "history_type": "joint",
+      "history_span": "full72",
+      "future_type": "weather",
+      "future_horizon": "day1",
+      "median_rho": 0.28149288062322014
+    },
+    {
+      "history_type": "joint",
+      "history_span": "full72",
+      "future_type": "weather",
+      "future_horizon": "day3",
+      "median_rho": 0.05473046268261567
+    },
+    {
+      "history_type": "joint",
+      "history_span": "full72",
+      "future_type": "weather",
+      "future_horizon": "full72",
+      "median_rho": 0.18080678570169645
+    },
+    {
+      "history_type": "joint",
+      "history_span": "recent24",
+      "future_type": "joint",
+      "future_horizon": "day1",
+      "median_rho": 0.45771703992926005
+    },
+    {
+      "history_type": "joint",
+      "history_span": "recent24",
+      "future_type": "joint",
+      "future_horizon": "day3",
+      "median_rho": 0.06368955992238998
+    },
+    {
+      "history_type": "joint",
+      "history_span": "recent24",
+      "future_type": "joint",
+      "future_horizon": "full72",
+      "median_rho": 0.27250282412570603
+    },
+    {
+      "history_type": "joint",
+      "history_span": "recent24",
+      "future_type": "pm",
+      "future_horizon": "day1",
+      "median_rho": 0.19550397312599327
+    },
+    {
+      "history_type": "joint",
+      "history_span": "recent24",
+      "future_type": "pm",
+      "future_horizon": "day3",
+      "median_rho": 0.0026730404182601043
+    },
+    {
+      "history_type": "joint",
+      "history_span": "recent24",
+      "future_type": "pm",
+      "future_horizon": "full72",
+      "median_rho": 0.11113244778311193
+    },
+    {
+      "history_type": "joint",
+      "history_span": "recent24",
+      "future_type": "weather",
+      "future_horizon": "day1",
+      "median_rho": 0.43649110687277665
+    },
+    {
+      "history_type": "joint",
+      "history_span": "recent24",
+      "future_type": "weather",
+      "future_horizon": "day3",
+      "median_rho": 0.06414702553675639
+    },
+    {
+      "history_type": "joint",
+      "history_span": "recent24",
+      "future_type": "weather",
+      "future_horizon": "full72",
+      "median_rho": 0.2642699378174844
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "full72",
+      "future_type": "joint",
+      "future_horizon": "day1",
+      "median_rho": 0.11181923270480817
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "full72",
+      "future_type": "joint",
+      "future_horizon": "day3",
+      "median_rho": -0.003113065528266382
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "full72",
+      "future_type": "joint",
+      "future_horizon": "full72",
+      "median_rho": 0.05131812607953152
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "full72",
+      "future_type": "pm",
+      "future_horizon": "day1",
+      "median_rho": 0.24135782058945515
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "full72",
+      "future_type": "pm",
+      "future_horizon": "day3",
+      "median_rho": 0.048918805729701434
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "full72",
+      "future_type": "pm",
+      "future_horizon": "full72",
+      "median_rho": 0.17178169069542265
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "full72",
+      "future_type": "weather",
+      "future_horizon": "day1",
+      "median_rho": 0.05110028252507063
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "full72",
+      "future_type": "weather",
+      "future_horizon": "day3",
+      "median_rho": -0.016226356806589202
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "full72",
+      "future_type": "weather",
+      "future_horizon": "full72",
+      "median_rho": 0.010116175779043945
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "recent24",
+      "future_type": "joint",
+      "future_horizon": "day1",
+      "median_rho": 0.15703623100905773
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "recent24",
+      "future_type": "joint",
+      "future_horizon": "day3",
+      "median_rho": 0.008064833016208254
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "recent24",
+      "future_type": "joint",
+      "future_horizon": "full72",
+      "median_rho": 0.0834633576158394
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "recent24",
+      "future_type": "pm",
+      "future_horizon": "day1",
+      "median_rho": 0.35790817897704474
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "recent24",
+      "future_type": "pm",
+      "future_horizon": "day3",
+      "median_rho": 0.04132624858156214
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "recent24",
+      "future_type": "pm",
+      "future_horizon": "full72",
+      "median_rho": 0.22287754221938555
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "recent24",
+      "future_type": "weather",
+      "future_horizon": "day1",
+      "median_rho": 0.07358322489580622
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "recent24",
+      "future_type": "weather",
+      "future_horizon": "day3",
+      "median_rho": -0.003053538763384691
+    },
+    {
+      "history_type": "pm_only",
+      "history_span": "recent24",
+      "future_type": "weather",
+      "future_horizon": "full72",
+      "median_rho": 0.032608661152165284
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "full72",
+      "future_type": "joint",
+      "future_horizon": "day1",
+      "median_rho": 0.28365583016395757
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "full72",
+      "future_type": "joint",
+      "future_horizon": "day3",
+      "median_rho": 0.05288824547206137
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "full72",
+      "future_type": "joint",
+      "future_horizon": "full72",
+      "median_rho": 0.18030270982567745
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "full72",
+      "future_type": "pm",
+      "future_horizon": "day1",
+      "median_rho": 0.05663988740997185
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "full72",
+      "future_type": "pm",
+      "future_horizon": "day3",
+      "median_rho": -0.01715547503886876
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "full72",
+      "future_type": "pm",
+      "future_horizon": "full72",
+      "median_rho": 0.011111390777847695
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "full72",
+      "future_type": "weather",
+      "future_horizon": "day1",
+      "median_rho": 0.29191636822909206
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "full72",
+      "future_type": "weather",
+      "future_horizon": "day3",
+      "median_rho": 0.05973217268304317
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "full72",
+      "future_type": "weather",
+      "future_horizon": "full72",
+      "median_rho": 0.1903378548344637
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "recent24",
+      "future_type": "joint",
+      "future_horizon": "day1",
+      "median_rho": 0.45090304372576095
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "recent24",
+      "future_type": "joint",
+      "future_horizon": "day3",
+      "median_rho": 0.0631654507913627
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "recent24",
+      "future_type": "joint",
+      "future_horizon": "full72",
+      "median_rho": 0.27326224581556147
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "recent24",
+      "future_type": "pm",
+      "future_horizon": "day1",
+      "median_rho": 0.11550495037623759
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "recent24",
+      "future_type": "pm",
+      "future_horizon": "day3",
+      "median_rho": -0.009234069808517452
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "recent24",
+      "future_type": "pm",
+      "future_horizon": "full72",
+      "median_rho": 0.05846838036709509
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "recent24",
+      "future_type": "weather",
+      "future_horizon": "day1",
+      "median_rho": 0.4549053634763408
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "recent24",
+      "future_type": "weather",
+      "future_horizon": "day3",
+      "median_rho": 0.06802822625705655
+    },
+    {
+      "history_type": "weather_only",
+      "history_span": "recent24",
+      "future_type": "weather",
+      "future_horizon": "full72",
+      "median_rho": 0.2796770019192505
+    }
+  ],
+  "regional_pm_explained": [
+    0.2563627887020957,
+    0.1136884535597657,
+    0.06983976057362848,
+    0.043029399006877696,
+    0.03896744872663853
+  ],
+  "regional_weather_explained": {
+    "temperature": [
+      0.6168188663693277,
+      0.10534389490309391,
+      0.06685684050353431
+    ],
+    "pressure": [
+      0.7485004764236479,
+      0.10207964265384194,
+      0.0898160578753027
+    ],
+    "rh950": [
+      0.40569317174835745,
+      0.12129555469835972,
+      0.09834876581813544
+    ],
+    "wind_u": [
+      0.36956389159343916,
+      0.10575971127589308,
+      0.08678087408852651
+    ],
+    "wind_v": [
+      0.3605208238154606,
+      0.1468430626289432,
+      0.07201804220166684
+    ],
+    "pbl": [
+      0.30040483945646906,
+      0.11680146095391242,
+      0.07813816076032783
+    ],
+    "log_precipitation": [
+      0.12797972075895525,
+      0.09414100161686542,
+      0.061453534542831166
+    ]
+  }
+}

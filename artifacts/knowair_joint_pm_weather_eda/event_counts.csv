@@ -1,0 +1,5 @@
+event,total_station_origins,median_per_station,q25_per_station,q75_per_station
+clean_persistence,606851,3116.0,2066.5,4355.0
+onset,12332,52.0,26.0,96.0
+polluted_persistence,256353,1220.0,733.5,1967.25
+clearance,28853,138.5,81.0,208.5
