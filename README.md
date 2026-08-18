@@ -1,69 +1,50 @@
-# Transport--Source Recurrent Operator
+# KnowAir Quantile Router
 
-Repo phục vụ manuscript về dự báo PM2.5 nhiều bước trên KnowAir. Research đã được
-freeze; kiến trúc paper là recurrent state evolution với wind-aligned transport
-và common/local source--sink.
+Repository này chỉ giữ lại thí nghiệm chọn giữa ba PM trajectories:
 
-## Kết luận chính
+- DART q10 (low expert);
+- Boundary-CSIO point forecast (center expert);
+- DART q90 (high expert).
 
-- TSR đạt validation MAE `16.7630`, tốt hơn matched direct model `18.8620`
-  khoảng `2.0990` MAE.
-- Trên KnowAir test, ba mô hình TSR đạt `16.1266 +/- 0.0348`; uniform ensemble
-  đạt `15.8205 / 24.3253 / 0.3721` cho MAE/RMSE/sMAPE.
-- Các history-only forcing/memory variants dừng quanh `20.5--20.9` hoặc tệ hơn;
-  future exogenous forcing uncertainty là limitation chính.
-- Trên UCI Beijing độc lập, TSR giảm point estimate MAE và sMAPE nhưng tăng RMSE;
-  khoảng tin cậy thời gian vẫn cắt 0 nên kết quả chỉ mang tính gợi ý.
+Oracle chọn expert có station-day MAE thấp nhất và đạt validation MAE
+`13.8772215719`. Causal router chỉ dùng thông tin có tại forecast origin và đạt
+`20.5219`, nên oracle là ceiling chẩn đoán chứ không phải deployable score.
 
-Các số, claim constraints và artifact dùng để viết paper nằm trong [`paper/`](paper/README.md).
+## Cài đặt
 
-## Ranh giới so sánh
-
-Checkpoint chính nằm trong `paper/checkpoints/tsr_primary/`. Chúng được chọn trên
-validation trước khi đánh giá KnowAir test; kết quả đầy
-đủ nằm trong `paper/artifacts/tsr_primary_test.json`.
-
-Model dùng realized target-period core meteorology. Vì vậy comparison với AirDDE
-chỉ là published point estimates dưới information setting khác, không phải fair
-identical-input comparison hay paired statistical superiority.
-
-## Setup RTX 5060 Ti
-
-```powershell
-py -3.11 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip setuptools wheel
-.\.venv\Scripts\python.exe -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cu128
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m pip install -e .
-.\.venv\Scripts\python.exe scripts\verify_cuda.py
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m pip install -e .
 ```
 
-## Reproduce
+Dataset cần nằm tại:
 
-Xem [`RUN_ANALYSIS.md`](RUN_ANALYSIS.md) cho training/ablation validation-only và
-China-AQI protocol audit. Repo không còn local AirDDE reproduction và không chứa
-command mở corrected China-AQI test.
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest -q
+```text
+data/benchmarks/knowair/KnowAir.npy
+data/benchmarks/knowair/city.txt
 ```
 
-Thử nghiệm latent-impact distillation (khí tượng tương lai chỉ là privileged
-input lúc train; validation chỉ dùng lịch sử) có entry point riêng:
+## Tái lập oracle 13.877
 
-```powershell
-.\.venv\Scripts\python.exe -m common_local.train_distillation --seeds 43
+```bash
+.venv/bin/python scripts/eda_knowair_quantile_router.py --oracle-only
 ```
 
-Bản distillation mặc định dùng hai nhánh latent vận chuyển/nguồn và tối ưu cả
-posterior lẫn prior triển khai (`--latent-prior-loss-weight 1`). Chẩn đoán ba
-đường dự báo của checkpoint cũ, chỉ trên validation:
+## Chạy lại causal router
 
-```powershell
-.\.venv\Scripts\python.exe scripts\diagnose_distilled_latent.py --device cuda
+```bash
+.venv/bin/python scripts/eda_knowair_quantile_router.py \
+  --output-dir artifacts/knowair_quantile_router_eda
 ```
 
-`--latent-samples 9` lấy median của chín quỹ đạo prior tại validation; đặt bằng
-`1` để dùng trực tiếp prior mean và giảm chi phí tính toán.
+Frozen inputs đã được gom vào
+`artifacts/knowair_quantile_router_eda/router_inputs.npz`; không còn phụ thuộc
+artifact hoặc code từ các ý tưởng khác. Xem [protocol](docs/QUANTILE_ROUTER.md)
+và [retained report](artifacts/knowair_quantile_router_eda/REPORT_VI.md).
 
-`data/` và `.venv/` là local resources, không thuộc paper package.
+## Kiểm thử
+
+```bash
+.venv/bin/python -m pytest -q
+```

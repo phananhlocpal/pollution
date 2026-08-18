@@ -1,0 +1,10 @@
+{
+  "boundary_csio_center_mae": 20.081308364868164,
+  "quantile_router_mae": 20.521891344865164,
+  "mae_gain": -0.440582979997,
+  "oracle_station_day_mae": 13.877221571894125,
+  "promote_quantile_router": false,
+  "information_setting": "KnowAir past 72h + DART distribution + predicted event arrival; no realized future weather at validation",
+  "test_split_consulted": false,
+  "external_data_used": false
+}

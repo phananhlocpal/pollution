@@ -1,0 +1,4 @@
+future_day,max_leaf_nodes,min_samples_leaf,rule,confidence,train_tail_mae,train_tail_center_mae,active
+1,7,100,soft,0.6,16.594103797010003,16.600868225097656,True
+2,7,300,soft,0.6,20.705128030223186,20.725919723510742,True
+3,7,100,soft,0.4,22.426226371992296,22.560178756713867,True
