@@ -1,4 +1,4 @@
-"""Minimal leakage-safe KnowAir loader used by the Quantile Router."""
+"""Leakage-safe KnowAir loader shared by the retained diagnostics."""
 
 from __future__ import annotations
 
@@ -90,7 +90,12 @@ class PMTransform:
 
 
 class KnowAirDataModule:
-    """Expose only the causal PM/history metadata required by the router."""
+    """Expose causal history and observed data for validation-only diagnostics.
+
+    ``observed_weather`` is deliberately explicit about forecast origins and
+    horizon.  It is useful for perfect-prognosis diagnostics, but callers must
+    not pass its output off as forecast-origin information.
+    """
 
     def __init__(
         self,
@@ -108,6 +113,7 @@ class KnowAirDataModule:
         raw = np.load(raw_path, mmap_mode="r")
         if raw.ndim != 3 or raw.shape[-1] != len(RAW_FEATURES):
             raise ValueError(f"unexpected KnowAir shape {raw.shape}")
+        self._raw = raw
         self.length, self.stations = raw.shape[:2]
         self.timestamps = pd.date_range(
             "2015-01-01",
@@ -134,3 +140,39 @@ class KnowAirDataModule:
         self.pm_anomaly = np.nan_to_num(
             self.pm_anomaly, nan=0.0, posinf=0.0, neginf=0.0
         )
+
+    @property
+    def weather_feature_names(self) -> tuple[str, ...]:
+        """Raw meteorological channel names, in their archive order."""
+        return tuple(name for name in RAW_FEATURES if name != "pm25")
+
+    @property
+    def timestamp_basis(self) -> str:
+        """Interpretation required by the forecast-archive contract."""
+        return "UTC"
+
+    def observed_weather(
+        self,
+        origins: np.ndarray,
+        horizon: int,
+        feature_names: tuple[str, ...],
+    ) -> np.ndarray:
+        """Return realized future weather as ``[origin, lead, station, feature]``.
+
+        This accessor exists so an audit can calculate forecast-weather error.
+        It is *not* a source of deployable covariates.  Bounds are checked here
+        so callers cannot silently cross a chronological split.
+        """
+        origins = np.asarray(origins, dtype=np.int64)
+        if origins.ndim != 1 or not len(origins):
+            raise ValueError("origins must be a non-empty one-dimensional array")
+        if horizon <= 0:
+            raise ValueError("horizon must be positive")
+        if origins.min() < 0 or origins.max() + horizon > self.length:
+            raise ValueError("requested future weather is outside KnowAir")
+        unknown = set(feature_names) - set(self.weather_feature_names)
+        if unknown:
+            raise ValueError(f"unknown meteorological features: {sorted(unknown)}")
+        indices = [RAW_FEATURES.index(name) for name in feature_names]
+        steps = origins[:, None] + np.arange(horizon, dtype=np.int64)[None]
+        return np.asarray(self._raw[steps, :, :][..., indices], dtype=np.float32)

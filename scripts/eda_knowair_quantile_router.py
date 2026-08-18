@@ -230,6 +230,32 @@ def flatten_selected(
     return x[selected], y[selected], selected
 
 
+def purged_train_tail_indices(
+    length: int,
+    horizon: int,
+    origin_stride: int,
+    split_fraction: float = 0.8,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Split router fitting and tuning without overlapping target windows.
+
+    Router labels consume the full target horizon.  The last fitting origin
+    must therefore finish no later than the first chronological tuning origin.
+    """
+    if horizon <= 0 or origin_stride <= 0:
+        raise ValueError("horizon and origin_stride must be positive")
+    split = max(128, int(split_fraction * length))
+    if split >= length:
+        raise ValueError("train-tail split leaves no tuning origins")
+    train_stop = split - horizon + 1
+    if train_stop <= 0:
+        raise ValueError("purge gap leaves no fitting origins")
+    train_origins = np.arange(0, train_stop, origin_stride, dtype=np.int64)
+    query_origins = np.arange(split, length, dtype=np.int64)
+    if train_origins[-1] + horizon > query_origins[0]:
+        raise AssertionError("purge failure: fitting and tuning targets overlap")
+    return train_origins, query_origins
+
+
 def expand_probability(
     classifier: HistGradientBoostingClassifier,
     features: np.ndarray,
@@ -252,9 +278,9 @@ def fit_and_select(
     seed: int,
     origin_stride: int,
 ) -> tuple[dict[str, object], list[dict[str, object]]]:
-    split = max(128, int(0.8 * len(features)))
-    train_origins = np.arange(0, split, origin_stride)
-    query_origins = np.arange(split, len(features))
+    train_origins, query_origins = purged_train_tail_indices(
+        len(features), experts.shape[2], origin_stride
+    )
     x, y, selected = flatten_selected(
         features, labels, valid, train_origins
     )
@@ -286,6 +312,7 @@ def fit_and_select(
                         "rule": rule,
                         "confidence": confidence,
                         "train_tail_mae": score,
+                        "purge_steps": experts.shape[2],
                     })
                     if score < best_mae:
                         best_mae = score
@@ -295,6 +322,7 @@ def fit_and_select(
                             "rule": rule,
                             "confidence": confidence,
                             "train_tail_mae": score,
+                            "purge_steps": experts.shape[2],
                         }
     assert best is not None
     center_mae = mae(

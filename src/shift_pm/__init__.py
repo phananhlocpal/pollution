@@ -1,5 +1,6 @@
-"""Minimal KnowAir data support retained for the Quantile Router experiment."""
+"""Leakage-safe utilities for KnowAir diagnostics."""
 
 from .data import KnowAirDataModule, QuantileRouterProtocol
+from .forecast_archive import ForecastArchive
 
-__all__ = ["KnowAirDataModule", "QuantileRouterProtocol"]
+__all__ = ["ForecastArchive", "KnowAirDataModule", "QuantileRouterProtocol"]

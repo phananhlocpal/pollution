@@ -1,0 +1,9 @@
+{
+  "artifact": "router_inputs.npz",
+  "bytes": 861737962,
+  "sha256": "62b7579dc1ddfb08f7de89960fbf413819788f775a68b595b508359847edbaaf",
+  "availability": "local, gitignored; not included in a clean clone",
+  "validated_command": ".venv/bin/python scripts/eda_knowair_quantile_router.py --oracle-only",
+  "validated_oracle_station_day_mae": 13.877221571894125,
+  "test_split_consulted": false
+}

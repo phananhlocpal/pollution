@@ -3,6 +3,7 @@ import numpy as np
 from scripts.eda_knowair_quantile_router import (
     expert_labels,
     oracle_selector_metrics,
+    purged_train_tail_indices,
     routed_prediction,
 )
 
@@ -64,3 +65,10 @@ def test_oracle_selector_aggregates_day_winners() -> None:
     )
     assert len(rows) == 3
     np.testing.assert_allclose(overall, 0.1, atol=1e-6)
+
+
+def test_train_tail_purge_prevents_target_overlap() -> None:
+    fitted, tuned = purged_train_tail_indices(
+        length=400, horizon=24, origin_stride=4
+    )
+    assert fitted.max() + 24 <= tuned.min()
